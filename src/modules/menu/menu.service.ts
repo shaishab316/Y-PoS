@@ -8,8 +8,15 @@ export class MenuService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createMenu(data: CreateMenuDto) {
-    return await this.prisma.menu.create({
+    const menu = await this.prisma.menu.create({
       data,
+    });
+
+    return await this.prisma.menu.update({
+      where: { id: menu.id },
+      data: {
+        slug: `m-${menu.id.toString().padStart(3, '0')}`,
+      },
     });
   }
 

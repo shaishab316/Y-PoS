@@ -4,7 +4,7 @@ model Section {
 
   name      String?
   layout    Layout? @default(SINGLE)
-  sortOrder Int?    @default(0)
+  sortOrder Int?    @default(autoincrement())
 
   menuId Int?
   menu   Menu? @relation(fields: [menuId], references: [id], onDelete: Cascade)
@@ -23,7 +23,7 @@ model SectionItem {
   itemId Int?
   item   Item? @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  sortOrder Int? @default(0)
+  sortOrder Int? @default(autoincrement())
 
   @@map("section_items")
 }

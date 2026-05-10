@@ -59,7 +59,7 @@ model GlobalCharge {
   name      String?
   rate      Decimal @db.Decimal(5, 2)
   isPercent Boolean @default(true)
-  sortOrder Int     @default(0)
+  sortOrder Int     @default(autoincrement())
 
   @@map("global_charges")
 }

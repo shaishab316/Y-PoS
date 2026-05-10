@@ -1,5 +1,5 @@
 model Menu {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   slug String? // m-00001
 
   name          String?
@@ -15,7 +15,7 @@ model Menu {
   orientationKiosk   Orientation? @default(LANDSCAPE)
   orientationService Orientation? @default(PORTRAIT)
 
-  sortOrder Int? @default(0)
+  sortOrder Int? @default(autoincrement())
 
   sections Section[]
 

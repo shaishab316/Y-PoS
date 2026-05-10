@@ -4,7 +4,7 @@ model ProductionStation {
   slug String? // ps-00001
 
   name      String?
-  sortOrder Int?     @default(0)
+  sortOrder Int?     @default(autoincrement())
   isActive  Boolean? @default(true)
 
   items      Item[]

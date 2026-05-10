@@ -1,5 +1,5 @@
 model Item {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   slug String? // i-00001
 
   name     String?
@@ -35,7 +35,7 @@ model Item {
 }
 
 model PacketSection {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   slug String? // ps-00001
 
   itemId Int?
@@ -43,7 +43,7 @@ model PacketSection {
 
   name      String?
   maxQty    Int?    @default(1)
-  sortOrder Int?    @default(0)
+  sortOrder Int?    @default(autoincrement())
 
   choices PacketSectionChoice[]
 
@@ -51,7 +51,7 @@ model PacketSection {
 }
 
 model PacketSectionChoice {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   slug String? // psc-00001
 
   packetSectionId Int?
@@ -59,7 +59,7 @@ model PacketSectionChoice {
 
   name      String?
   maxQty    Int?    @default(1)
-  sortOrder Int?    @default(0)
+  sortOrder Int?    @default(autoincrement())
 
   @@map("packet_section_choices")
 }
