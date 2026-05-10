@@ -160,4 +160,7 @@ export const sharedDtoSchema = {
 
       return dateObj;
     }),
+
+  boolean: () =>
+    z.union([z.string().transform((val) => val === 'true'), z.boolean()]),
 };

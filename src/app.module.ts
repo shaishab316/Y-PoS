@@ -15,6 +15,7 @@ import LokiTransport from 'winston-loki';
 import { CustomThrottlerGuard } from './common/guards/throttler.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { UploadModule } from './infra/upload/upload.module';
+import { MenuModule } from './modules/menu/menu.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { UploadModule } from './infra/upload/upload.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     UploadModule,
+    MenuModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
 })
