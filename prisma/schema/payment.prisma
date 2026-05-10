@@ -1,0 +1,28 @@
+model Payment {
+  id   Int    @id @default(autoincrement())
+  slug String? // pay-00001
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  method PaymentMethod? @default(CASH)
+  status PaymentStatus? @default(PENDING)
+
+  subtotal     Decimal? @db.Decimal(10, 2)
+  chargesTotal Decimal? @default(0.00) @db.Decimal(10, 2)
+  totalAmount  Decimal? @db.Decimal(10, 2)
+
+  cashReceived Decimal? @db.Decimal(10, 2)
+  changeAmount Decimal? @db.Decimal(10, 2)
+
+  proofImageUrl String?
+
+  appliedCharges Json?
+
+  paidAt DateTime?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@map("payments")
+}

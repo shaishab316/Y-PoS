@@ -1,0 +1,23 @@
+model InventoryLog {
+  id   Int    @id @default(autoincrement())
+  slug String? // il-00001
+
+  itemId   Int?
+  itemName String?
+
+  date DateTime? @db.Date
+
+  openingStock Int? @default(0)
+  stockSold    Int? @default(0)
+  stockIn      Int? @default(0)
+  stockOut     Int? @default(0)
+  closingStock Int? @default(0)
+
+  remarks String?
+
+  createdBy Int?
+
+  createdAt DateTime? @default(now())
+
+  @@map("inventory_logs")
+}

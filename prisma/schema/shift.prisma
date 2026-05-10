@@ -1,0 +1,46 @@
+model ShiftSession {
+  id String @id @default(uuid())
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  type ShiftType?
+
+  inventoryAccurate  Boolean?
+  promotionConfirmed Boolean?
+
+  openingCashAmount  Decimal? @db.Decimal(10, 2)
+  closingCashAmount  Decimal? @db.Decimal(10, 2)
+  closingDiscrepancy Decimal? @db.Decimal(10, 2)
+
+  salesConfirmed Boolean?
+
+  skippedInventory Boolean? @default(false)
+  skippedPromotion Boolean? @default(false)
+  skippedCash      Boolean? @default(false)
+
+  cashProofs CashProof[]
+
+  createdAt DateTime? @default(now())
+
+  @@map("shift_sessions")
+}
+
+model CashProof {
+  id String @id @default(uuid())
+
+  shiftSessionId String?
+  shiftSession   ShiftSession? @relation(fields: [shiftSessionId], references: [id], onDelete: Cascade)
+
+  imageUrl String?
+
+  uploadedById Int?
+  uploadedBy   User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  verifiedById Int?
+  verifiedAt   DateTime?
+
+  createdAt DateTime? @default(now())
+
+  @@map("cash_proofs")
+}

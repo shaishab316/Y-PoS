@@ -1,0 +1,29 @@
+model Section {
+  id   Int     @id @default(autoincrement())
+  slug String? // sec-00001
+
+  name      String?
+  layout    Layout? @default(SINGLE)
+  sortOrder Int?    @default(0)
+
+  menuId Int?
+  menu   Menu? @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  sectionItems SectionItem[]
+
+  @@map("sections")
+}
+
+model SectionItem {
+  id String @id @default(uuid())
+
+  sectionId Int?
+  section   Section? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  itemId Int?
+  item   Item? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  sortOrder Int? @default(0)
+
+  @@map("section_items")
+}

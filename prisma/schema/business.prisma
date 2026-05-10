@@ -1,0 +1,65 @@
+model BusinessProfile {
+  id Int @id @default(autoincrement())
+
+  name        String?
+  address     String?
+  contact     String?
+  email       String?
+  socialMedia String?
+  logoUrl     String?
+  customNote  String?
+
+  passwordRecoveryEmail String?
+
+  operatingHours OperatingHour[]
+  holidays       Holiday[]
+
+  globalCharges GlobalCharge[]
+
+  updatedAt DateTime? @updatedAt
+
+  @@map("business_profiles")
+}
+
+model OperatingHour {
+  id Int @id @default(autoincrement())
+
+  businessProfileId Int
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int? @default(0) // 0=Sunday, 6=Saturday
+
+  openTime1  String? // e.g. "08:00"
+  closeTime1 String?
+
+  openTime2  String?
+  closeTime2 String?
+
+  @@map("operating_hours")
+}
+
+model Holiday {
+  id Int @id @default(autoincrement())
+
+  businessProfileId Int
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  date        DateTime? @db.Date
+  description String?
+
+  @@map("holidays")
+}
+
+model GlobalCharge {
+  id Int @id @default(autoincrement())
+
+  businessProfileId Int
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  name      String?
+  rate      Decimal @db.Decimal(5, 2)
+  isPercent Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@map("global_charges")
+}

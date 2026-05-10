@@ -1,0 +1,79 @@
+enum Layout {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  QUADRUPLE
+  LIST_WITH_IMAGE
+  LIST_NO_IMAGE
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  PICKED_UP
+  CANCELLED
+}
+
+enum OrderSource {
+  QR_TABLE
+  TOUCHSCREEN
+  STAFF
+  ADMIN
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum ItemLabel {
+  BEST_SELLER
+  RECOMMENDED
+  FAVORITE
+  MUST_TRY
+  NEW
+  VEGETARIAN
+  KIDS_CHOICE
+  SPICY
+}
+
+enum ItemType {
+  INDIVIDUAL
+  PACKET
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+}
+
+enum Orientation {
+  LANDSCAPE
+  PORTRAIT
+}
+
+enum ShiftType {
+  OPENING
+  CLOSING
+}
+
+enum NotificationEvent {
+  ORDER_RECEIVED
+  ITEM_READY
+  ITEM_PICKED_UP
+  MANUAL_REMIND
+  ITEM_CANCELLED
+}

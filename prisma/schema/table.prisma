@@ -1,0 +1,15 @@
+model Table {
+  id Int @id @default(autoincrement())
+
+  slug String? // t-00001
+
+  tableNumber Int?
+
+  qrCode String?
+
+  isActive Boolean? @default(true)
+
+  orders Order[]
+
+  @@map("tables")
+}

@@ -1,0 +1,16 @@
+model Notification {
+  id String @id @default(uuid())
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  orderItemId Int?
+
+  event NotificationEvent?
+
+  isMuted Boolean? @default(false)
+
+  createdAt DateTime? @default(now())
+
+  @@map("notifications")
+}

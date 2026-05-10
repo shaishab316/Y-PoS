@@ -1,0 +1,23 @@
+model Menu {
+  id   Int    @id @default(autoincrement())
+  slug String? // m-00001
+
+  name          String?
+  coverImageUrl String?
+
+  isVisible Boolean? @default(true)
+
+  visibleOnQrTable     Boolean? @default(true)
+  visibleOnTouchscreen Boolean? @default(true)
+  visibleOnService     Boolean? @default(true)
+  visibleOnAdmin       Boolean? @default(true)
+
+  orientationKiosk   Orientation? @default(LANDSCAPE)
+  orientationService Orientation? @default(PORTRAIT)
+
+  sortOrder Int? @default(0)
+
+  sections Section[]
+
+  @@map("menus")
+}

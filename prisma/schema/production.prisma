@@ -1,0 +1,14 @@
+model ProductionStation {
+  id Int @id @default(autoincrement())
+
+  slug String? // ps-00001
+
+  name      String?
+  sortOrder Int?     @default(0)
+  isActive  Boolean? @default(true)
+
+  items      Item[]
+  orderItems OrderItem[]
+
+  @@map("production_stations")
+}

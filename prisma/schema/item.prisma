@@ -1,0 +1,65 @@
+model Item {
+  id   Int    @id @default(autoincrement())
+  slug String? // i-00001
+
+  name     String?
+  itemType ItemType? @default(INDIVIDUAL)
+  price    Decimal?  @default(0.00) @db.Decimal(10, 2)
+
+  productionStationId Int?
+  productionStation   ProductionStation? @relation(fields: [productionStationId], references: [id], onDelete: SetNull)
+
+  inventoryQty Int?
+
+  labels ItemLabel[]
+
+  imageUrl String?
+
+  isVisible    Boolean? @default(true)
+  isOutOfStock Boolean? @default(false)
+
+  hasPromo   Boolean? @default(false)
+  promoName  String?
+  promoPrice Decimal? @db.Decimal(10, 2)
+
+  maxPacketItems Int?
+  packetSections PacketSection[]
+
+  sectionItems SectionItem[]
+  orderItems   OrderItem[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@map("items")
+}
+
+model PacketSection {
+  id   Int    @id @default(autoincrement())
+  slug String? // ps-00001
+
+  itemId Int?
+  item   Item? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  name      String?
+  maxQty    Int?    @default(1)
+  sortOrder Int?    @default(0)
+
+  choices PacketSectionChoice[]
+
+  @@map("packet_sections")
+}
+
+model PacketSectionChoice {
+  id   Int    @id @default(autoincrement())
+  slug String? // psc-00001
+
+  packetSectionId Int?
+  packetSection   PacketSection? @relation(fields: [packetSectionId], references: [id], onDelete: Cascade)
+
+  name      String?
+  maxQty    Int?    @default(1)
+  sortOrder Int?    @default(0)
+
+  @@map("packet_section_choices")
+}

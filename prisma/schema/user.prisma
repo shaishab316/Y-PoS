@@ -1,0 +1,22 @@
+model User {
+  id Int @id @default(autoincrement())
+
+  slug String? // u-00001
+
+  name String?
+
+  role UserRole? @default(ADMIN)
+
+  passwordHash String?
+
+  isActive Boolean? @default(true)
+
+  orders        Order[]
+  shiftSessions ShiftSession[]
+  cashProofs    CashProof[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@map("users")
+}
