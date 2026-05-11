@@ -43,7 +43,7 @@ model PacketSection {
 
   name      String?
   maxQty    Int?    @default(1)
-  sortOrder Int?    @default(autoincrement())
+  sortOrder Int?
 
   choices PacketSectionChoice[]
 
@@ -59,7 +59,7 @@ model PacketSectionChoice {
 
   name      String?
   maxQty    Int?    @default(1)
-  sortOrder Int?    @default(autoincrement())
+  sortOrder Int?
 
   @@map("packet_section_choices")
 }

@@ -18,7 +18,7 @@ export const CreateMenuSchema = z.object({
     .enum(Orientation)
     .optional()
     .default(Orientation.PORTRAIT),
-  sortOrder: z.number().int().optional().default(0),
+  sortOrder: z.number().int().optional(),
 });
 
 export const UpdateMenuSchema = CreateMenuSchema.partial();

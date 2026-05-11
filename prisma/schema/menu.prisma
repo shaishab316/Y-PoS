@@ -15,7 +15,7 @@ model Menu {
   orientationKiosk   Orientation? @default(LANDSCAPE)
   orientationService Orientation? @default(PORTRAIT)
 
-  sortOrder Int? @default(autoincrement())
+  sortOrder Int?
 
   sections Section[]
 
