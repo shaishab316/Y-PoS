@@ -20,6 +20,7 @@ import { RedisModule } from './infra/redis/redis.module';
 import { CacheInterceptor } from './common/interceptors/cache.interceptor';
 import { SectionModule } from './modules/section/section.module';
 import { ItemModule } from './modules/item/item.module';
+import { ProductionStationModule } from './modules/production-station/production-station.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ItemModule } from './modules/item/item.module';
     RedisModule,
     SectionModule,
     ItemModule,
+    ProductionStationModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
