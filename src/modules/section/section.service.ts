@@ -65,4 +65,52 @@ export class SectionService {
       where: { id },
     });
   }
+
+  async bulkUpdateVisibility(
+    sections: Array<{ id: number; [key: string]: any }>,
+  ) {
+    // Validate all sections exist
+    const sectionIds = sections.map((s) => s.id);
+    const existingSections = await this.prisma.section.findMany({
+      where: { id: { in: sectionIds } },
+      select: { id: true },
+    });
+
+    const existingIds = new Set(existingSections.map((s) => s.id));
+    const missingIds = sectionIds.filter((id) => !existingIds.has(id));
+
+    if (missingIds.length > 0) {
+      throw new NotFoundException(
+        `Sections with IDs ${missingIds.join(', ')} not found`,
+      );
+    }
+
+    const updates = sections.map((section) => {
+      const { id, ...visibilityData } = section;
+
+      const payload = {} as Prisma.SectionUpdateArgs['data'];
+
+      if (visibilityData.isVisible !== undefined)
+        payload.isVisible = visibilityData.isVisible;
+      if (visibilityData.visibleOnQrTable !== undefined)
+        payload.visibleOnQrTable = visibilityData.visibleOnQrTable;
+      if (visibilityData.visibleOnTouchscreen !== undefined)
+        payload.visibleOnTouchscreen = visibilityData.visibleOnTouchscreen;
+      if (visibilityData.visibleOnService !== undefined)
+        payload.visibleOnService = visibilityData.visibleOnService;
+      if (visibilityData.visibleOnAdmin !== undefined)
+        payload.visibleOnAdmin = visibilityData.visibleOnAdmin;
+      if (visibilityData.orientationKiosk !== undefined)
+        payload.orientationKiosk = visibilityData.orientationKiosk;
+      if (visibilityData.orientationService !== undefined)
+        payload.orientationService = visibilityData.orientationService;
+
+      return this.prisma.section.update({
+        where: { id },
+        data: payload,
+      });
+    });
+
+    return await Promise.all(updates);
+  }
 }

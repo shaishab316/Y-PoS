@@ -12,7 +12,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { SectionService } from './section.service';
-import { CreateSectionDto, UpdateSectionDto } from './section.dto';
+import {
+  CreateSectionDto,
+  UpdateSectionDto,
+  BulkUpdateSectionVisibilityDto,
+} from './section.dto';
 import {
   CacheKey,
   CacheTTL,
@@ -24,7 +28,7 @@ export class SectionController {
   constructor(private readonly sectionService: SectionService) {}
 
   @Post()
-  @InvalidateCache('section:all')
+  @InvalidateCache('section:all:*')
   @HttpCode(HttpStatus.CREATED)
   async createSection(@Body() body: CreateSectionDto) {
     const data = await this.sectionService.createSection(body);
@@ -49,6 +53,18 @@ export class SectionController {
     };
   }
 
+  @Patch('visibility/bulk')
+  @InvalidateCache('section:all:*', 'section::params.id')
+  @HttpCode(HttpStatus.OK)
+  async bulkUpdateVisibility(@Body() body: BulkUpdateSectionVisibilityDto) {
+    const data = await this.sectionService.bulkUpdateVisibility(body.sections);
+
+    return {
+      message: `${data.length} section(s) visibility updated successfully`,
+      data,
+    };
+  }
+
   @Get(':id')
   @CacheKey('section::params.id')
   @CacheTTL(60 * 60) // 1 hour
@@ -62,7 +78,7 @@ export class SectionController {
   }
 
   @Patch(':id')
-  @InvalidateCache('section:all', 'section::params.id')
+  @InvalidateCache('section:all:*', 'section::params.id')
   @HttpCode(HttpStatus.OK)
   async updateSection(
     @Param('id', ParseIntPipe) id: number,
@@ -77,7 +93,7 @@ export class SectionController {
   }
 
   @Delete(':id')
-  @InvalidateCache('section:all', 'section::params.id')
+  @InvalidateCache('section:all:*', 'section::params.id')
   @HttpCode(HttpStatus.OK)
   async deleteSection(@Param('id', ParseIntPipe) id: number) {
     const data = await this.sectionService.deleteSection(id);
