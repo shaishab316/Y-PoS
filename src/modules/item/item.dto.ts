@@ -23,3 +23,10 @@ export const UpdateItemSchema = CreateItemSchema.partial();
 
 export class CreateItemDto extends createZodDto(CreateItemSchema) {}
 export class UpdateItemDto extends createZodDto(UpdateItemSchema) {}
+
+export const ItemQuerySchema = z.object({
+  page: z.coerce.number().int().default(1),
+  limit: z.coerce.number().int().default(10),
+});
+
+export class ItemQueryDto extends createZodDto(ItemQuerySchema) {}
