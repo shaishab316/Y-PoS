@@ -19,6 +19,7 @@ import { MenuModule } from './modules/menu/menu.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { CacheInterceptor } from './common/interceptors/cache.interceptor';
 import { SectionModule } from './modules/section/section.module';
+import { ItemModule } from './modules/item/item.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SectionModule } from './modules/section/section.module';
     MenuModule,
     RedisModule,
     SectionModule,
+    ItemModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },

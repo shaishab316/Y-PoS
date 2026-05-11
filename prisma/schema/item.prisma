@@ -28,6 +28,8 @@ model Item {
   sectionItems SectionItem[]
   orderItems   OrderItem[]
 
+  sortOrder Int?
+
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 

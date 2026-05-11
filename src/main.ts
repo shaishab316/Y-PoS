@@ -17,6 +17,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { BasicAuthMiddleware } from './common/middlewares/basic-auth.middleware';
 import { CacheInterceptor } from './common/interceptors/cache.interceptor';
+import { ParseJsonBodyInterceptor } from './common/interceptors/parse-json-body.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -116,8 +117,11 @@ async function bootstrap() {
 
   //? global interceptors
   logger.log('🎯 Global interceptors registered (Response, Cache)');
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalInterceptors(app.get(CacheInterceptor));
+  app.useGlobalInterceptors(
+    new ResponseInterceptor(),
+    app.get(CacheInterceptor),
+    new ParseJsonBodyInterceptor(),
+  );
 
   //? global exception filter
   logger.log('🛡️  Global exception filter configured');

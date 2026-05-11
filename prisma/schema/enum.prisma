@@ -58,6 +58,7 @@ enum ItemType {
 enum UserRole {
   OWNER
   ADMIN
+  SERVICE
 }
 
 enum Orientation {

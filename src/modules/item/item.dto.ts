@@ -1,0 +1,25 @@
+import { sharedDtoSchema as _ } from '@/common/dto/sharedDtoSchema';
+import { ItemLabel, ItemType } from '@prisma/client';
+import { createZodDto } from 'nestjs-zod';
+import z from 'zod';
+
+export const CreateItemSchema = z.object({
+  name: _.name({ field: 'Item name' }),
+  itemType: z.enum(ItemType).default(ItemType.INDIVIDUAL),
+  price: z.number().int().min(0).optional().default(0),
+  productionStationId: z.number().int().optional(),
+  inventoryQty: z.number().int().optional(),
+  labels: z.array(z.enum(ItemLabel)).optional(),
+  isVisible: z.boolean().optional().default(true),
+  isOutOfStock: z.boolean().optional().default(false),
+  hasPromo: z.boolean().optional().default(false),
+  promoName: z.string().max(100).optional(),
+  promoPrice: z.number().int().min(0).optional(),
+  maxPacketItems: z.number().int().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const UpdateItemSchema = CreateItemSchema.partial();
+
+export class CreateItemDto extends createZodDto(CreateItemSchema) {}
+export class UpdateItemDto extends createZodDto(UpdateItemSchema) {}
