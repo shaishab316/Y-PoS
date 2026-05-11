@@ -16,6 +16,8 @@ import { CustomThrottlerGuard } from './common/guards/throttler.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { UploadModule } from './infra/upload/upload.module';
 import { MenuModule } from './modules/menu/menu.module';
+import { RedisModule } from './infra/redis/redis.module';
+import { CacheInterceptor } from './common/interceptors/cache.interceptor';
 
 @Module({
   imports: [
@@ -46,8 +48,12 @@ import { MenuModule } from './modules/menu/menu.module';
     PrismaModule,
     UploadModule,
     MenuModule,
+    RedisModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: CustomThrottlerGuard },
+    CacheInterceptor,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
