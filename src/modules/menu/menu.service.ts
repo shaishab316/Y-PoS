@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
-import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
+import { CreateMenuDto, UpdateMenuDto, MenuQueryDto } from './menu.dto';
 import { Menu, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -19,10 +19,15 @@ export class MenuService {
     });
   }
 
-  async getAllMenus() {
-    return await this.prisma.menu.findMany({
-      orderBy: { sortOrder: 'asc' },
-    });
+  async getAllMenus({ page, limit }: MenuQueryDto) {
+    return await Promise.all([
+      this.prisma.menu.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { sortOrder: 'asc' },
+      }),
+      this.prisma.menu.count(),
+    ]);
   }
 
   async getMenuDetails(id: number) {

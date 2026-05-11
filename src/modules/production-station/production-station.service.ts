@@ -3,6 +3,7 @@ import { PrismaService } from '@/infra/prisma/prisma.service';
 import {
   CreateProductionStationDto,
   UpdateProductionStationDto,
+  ProductionStationQueryDto,
 } from './production-station.dto';
 import { ProductionStation, Prisma } from '@prisma/client';
 
@@ -22,10 +23,15 @@ export class ProductionStationService {
     });
   }
 
-  async getAllProductionStations() {
-    return await this.prisma.productionStation.findMany({
-      orderBy: { sortOrder: 'asc' },
-    });
+  async getAllProductionStations({ page, limit }: ProductionStationQueryDto) {
+    return await Promise.all([
+      this.prisma.productionStation.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { sortOrder: 'asc' },
+      }),
+      this.prisma.productionStation.count(),
+    ]);
   }
 
   async getProductionStationDetails(id: number) {

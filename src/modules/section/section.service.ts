@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
-import { CreateSectionDto, UpdateSectionDto } from './section.dto';
+import {
+  CreateSectionDto,
+  UpdateSectionDto,
+  SectionQueryDto,
+} from './section.dto';
 import { Section, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -19,13 +23,18 @@ export class SectionService {
     });
   }
 
-  async getAllSections(menuId?: number) {
+  async getAllSections({ page, limit, menuId }: SectionQueryDto) {
     const where: Prisma.SectionWhereInput = menuId ? { menuId } : {};
 
-    return await this.prisma.section.findMany({
-      where,
-      orderBy: { sortOrder: 'asc' },
-    });
+    return await Promise.all([
+      this.prisma.section.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { sortOrder: 'asc' },
+      }),
+      this.prisma.section.count({ where }),
+    ]);
   }
 
   async getSectionDetails(id: number) {

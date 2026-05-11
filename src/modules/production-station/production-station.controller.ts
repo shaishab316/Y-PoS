@@ -9,11 +9,13 @@ import {
   HttpStatus,
   Patch,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProductionStationService } from './production-station.service';
 import {
   CreateProductionStationDto,
   UpdateProductionStationDto,
+  ProductionStationQueryDto,
 } from './production-station.dto';
 import {
   CacheKey,
@@ -46,12 +48,21 @@ export class ProductionStationController {
   @Get()
   @CacheKey('production-station:all')
   @CacheTTL(60 * 60) // 1 hour
-  async getAllProductionStations(): Promise<ApiResponse> {
-    const data = await this.productionStationService.getAllProductionStations();
+  async getAllProductionStations(
+    @Query() query: ProductionStationQueryDto,
+  ): Promise<ApiResponse> {
+    const [data, total] =
+      await this.productionStationService.getAllProductionStations(query);
 
     return {
       message: 'Production Stations fetched successfully',
       data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 

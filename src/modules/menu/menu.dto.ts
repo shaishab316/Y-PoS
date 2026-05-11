@@ -23,5 +23,11 @@ export const CreateMenuSchema = z.object({
 
 export const UpdateMenuSchema = CreateMenuSchema.partial();
 
+export const MenuQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+
 export class CreateMenuDto extends createZodDto(CreateMenuSchema) {}
 export class UpdateMenuDto extends createZodDto(UpdateMenuSchema) {}
+export class MenuQueryDto extends createZodDto(MenuQuerySchema) {}

@@ -9,9 +9,10 @@ import {
   HttpStatus,
   Patch,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
-import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
+import { CreateMenuDto, UpdateMenuDto, MenuQueryDto } from './menu.dto';
 import {
   CacheKey,
   CacheTTL,
@@ -38,12 +39,18 @@ export class MenuController {
   @Get()
   @CacheKey('menu:all')
   @CacheTTL(60 * 60) // 1 hour
-  async getAllMenus(): Promise<ApiResponse> {
-    const data = await this.menuService.getAllMenus();
+  async getAllMenus(@Query() query: MenuQueryDto): Promise<ApiResponse> {
+    const [data, total] = await this.menuService.getAllMenus(query);
 
     return {
       message: 'Menus fetched successfully',
       data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 

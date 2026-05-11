@@ -31,6 +31,12 @@ export const BulkUpdateSectionVisibilitySchema = z.object({
   ),
 });
 
+export const SectionQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  menuId: z.coerce.number().int().optional(),
+});
+
 export class CreateSectionDto extends createZodDto(CreateSectionSchema) {}
 export class UpdateSectionDto extends createZodDto(UpdateSectionSchema) {}
 export class UpdateSectionVisibilityDto extends createZodDto(
@@ -39,3 +45,4 @@ export class UpdateSectionVisibilityDto extends createZodDto(
 export class BulkUpdateSectionVisibilityDto extends createZodDto(
   BulkUpdateSectionVisibilitySchema,
 ) {}
+export class SectionQueryDto extends createZodDto(SectionQuerySchema) {}

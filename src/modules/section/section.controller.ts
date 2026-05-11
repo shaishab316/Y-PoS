@@ -16,6 +16,7 @@ import {
   CreateSectionDto,
   UpdateSectionDto,
   BulkUpdateSectionVisibilityDto,
+  SectionQueryDto,
 } from './section.dto';
 import {
   CacheKey,
@@ -43,14 +44,18 @@ export class SectionController {
   @Get()
   @CacheKey('section:all')
   @CacheTTL(60 * 60) // 1 hour
-  async getAllSections(
-    @Query('menuId', new ParseIntPipe({ optional: true })) menuId?: number,
-  ): Promise<ApiResponse> {
-    const data = await this.sectionService.getAllSections(menuId);
+  async getAllSections(@Query() query: SectionQueryDto): Promise<ApiResponse> {
+    const [data, total] = await this.sectionService.getAllSections(query);
 
     return {
       message: 'Sections fetched successfully',
       data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 
