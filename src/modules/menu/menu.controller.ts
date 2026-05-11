@@ -8,15 +8,22 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
+import {
+  CacheKey,
+  CacheTTL,
+  InvalidateCache,
+} from '@/common/decorators/cache.decorator';
 
 @Controller('menu')
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Post()
+  @InvalidateCache('menu:all')
   @HttpCode(HttpStatus.CREATED)
   async createMenu(@Body() body: CreateMenuDto) {
     const data = await this.menuService.createMenu(body);
@@ -28,6 +35,8 @@ export class MenuController {
   }
 
   @Get()
+  @CacheKey('menu:all')
+  @CacheTTL(60 * 60) // 1 hour
   async getAllMenus() {
     const data = await this.menuService.getAllMenus();
 
@@ -38,7 +47,9 @@ export class MenuController {
   }
 
   @Get(':id')
-  async getMenuDetails(@Param('id') id: number) {
+  @CacheKey('menu::params.id')
+  @CacheTTL(60 * 60) // 1 hour
+  async getMenuDetails(@Param('id', ParseIntPipe) id: number) {
     const data = await this.menuService.getMenuDetails(id);
 
     return {
@@ -48,7 +59,12 @@ export class MenuController {
   }
 
   @Patch(':id')
-  async updateMenu(@Param('id') id: number, @Body() body: UpdateMenuDto) {
+  @InvalidateCache('menu:all', 'menu::params.id')
+  @HttpCode(HttpStatus.OK)
+  async updateMenu(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateMenuDto,
+  ) {
     const data = await this.menuService.updateMenu(id, body);
 
     return {
@@ -58,8 +74,9 @@ export class MenuController {
   }
 
   @Delete(':id')
+  @InvalidateCache('menu:all', 'menu::params.id')
   @HttpCode(HttpStatus.OK)
-  async deleteMenu(@Param('id') id: number) {
+  async deleteMenu(@Param('id', ParseIntPipe) id: number) {
     const data = await this.menuService.deleteMenu(id);
 
     return {
