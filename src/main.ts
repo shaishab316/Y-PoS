@@ -13,10 +13,11 @@ import { setupApiDocs } from './common/config/api-docs.config';
 import type { Env } from './common/config/app.config';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { CacheInterceptor } from './common/interceptors/cache.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { BasicAuthMiddleware } from './common/middlewares/basic-auth.middleware';
-import { CacheInterceptor } from './common/interceptors/cache.interceptor';
+import path from 'node:path';
 import { ParseJsonBodyInterceptor } from './common/interceptors/parse-json-body.interceptor';
 
 async function bootstrap() {
@@ -25,79 +26,53 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  //? trust proxy for correct client IP detection behind proxies (e.g., in production)
-  app.set('trust proxy', 1);
-
-  //? use Winston for logging
+  app.set('trust proxy', 'loopback');
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   const config = app.get(ConfigService<Env, true>);
   logger.log('✅ Configuration loaded successfully');
 
-  //? security headers
-  logger.log('⚔️  Configuring security headers...');
+  // security headers
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/docs')) {
+    if (
+      req.path.startsWith('/docs') ||
+      req.path.startsWith('/queues') ||
+      req.path === '/'
+    ) {
       helmet({ contentSecurityPolicy: false })(req, res, next);
     } else {
       helmet()(req, res, next);
     }
   });
 
-  //? cors
+  // cors
   const corsOrigin = config.get('CORS_ORIGIN', { infer: true });
-  const allowedOrigins = new Set(corsOrigin === '*' ? [] : corsOrigin);
-
-  logger.log(`📡 CORS enabled for origin: ${corsOrigin.toString()}`);
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (corsOrigin === '*' || allowedOrigins.has(origin))
-        return callback(null, true);
-      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
-    },
+    origin: corsOrigin,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['X-Total-Count'],
     credentials: true,
-    maxAge: 86400,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
   });
 
-  //? parse json body
-  app.use(
-    express.json({
-      limit: '1mb',
-    }),
-  );
+  // compression + body parsing
+  app.use(compression());
+  app.use(express.json());
 
-  //? gzip compression
-  logger.log('🗜️  Gzip compression enabled');
-  app.use(
-    compression({
-      threshold: 1024,
-      filter: (req: Request, res: Response) =>
-        req.headers['x-no-compression'] ? false : compression.filter(req, res),
-    }),
-  );
+  app.useStaticAssets(path.join(process.cwd(), 'public'), { maxAge: '1d' });
 
-  //? global prefix
-  logger.log('🔧 Setting global prefix to /api/v1');
+  // global prefix
   app.setGlobalPrefix('api/v1', {
     exclude: ['health', 'queues', 'docs', 'docs-json', 'docs-yaml'],
   });
 
-  //? protect /docs and /queues with basic auth
-  logger.log('🔐 Protecting /docs and /queues endpoints with basic auth');
-  const docsUsername = config.get('DOCS_USERNAME', { infer: true });
-  const docsPassword = config.get('DOCS_PASSWORD', { infer: true });
-  const queuesUsername = config.get('QUEUES_USERNAME', { infer: true });
-  const queuesPassword = config.get('QUEUES_PASSWORD', { infer: true });
-
-  const docsAuth = new BasicAuthMiddleware(docsUsername, docsPassword);
-  const queuesAuth = new BasicAuthMiddleware(queuesUsername, queuesPassword);
-
+  // basic auth for docs + queues
+  const docsAuth = new BasicAuthMiddleware(
+    config.get('DOCS_USERNAME', { infer: true }),
+    config.get('DOCS_PASSWORD', { infer: true }),
+  );
+  const queuesAuth = new BasicAuthMiddleware(
+    config.get('QUEUES_USERNAME', { infer: true }),
+    config.get('QUEUES_PASSWORD', { infer: true }),
+  );
   app.use('/docs', (req: Request, res: Response, next: NextFunction) =>
     docsAuth.use(req, res, next),
   );
@@ -111,31 +86,30 @@ async function bootstrap() {
     queuesAuth.use(req, res, next),
   );
 
-  //? global pipes — zod validation
-  logger.log('✔️  Zod validation pipe configured');
+  // global pipes
   app.useGlobalPipes(new ZodValidationPipe());
 
-  //? global interceptors
-  logger.log('🎯 Global interceptors registered (Response, Cache)');
+  // global interceptors
   app.useGlobalInterceptors(
     new ResponseInterceptor(),
     app.get(CacheInterceptor),
     new ParseJsonBodyInterceptor(),
   );
 
-  //? global exception filter
-  logger.log('🛡️  Global exception filter configured');
+  // global exception filter
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(
     new GlobalExceptionFilter({ httpAdapter } as HttpAdapterHost),
   );
 
-  logger.log('📖 Setting up API documentation...');
+  // api docs
   setupApiDocs(app);
 
-  //? Enable shutdown hooks to allow graceful shutdown of the application
-  logger.log('🔄 Graceful shutdown hooks enabled');
+  // shutdown hooks
   app.enableShutdownHooks();
+
+  // init — must be before redis adapter
+  await app.init();
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
@@ -147,5 +121,6 @@ async function bootstrap() {
 bootstrap().catch((err) => {
   const logger = new Logger('Bootstrap');
   logger.error('❌ Failed to start application', err);
+  console.error(err);
   process.exit(1);
 });

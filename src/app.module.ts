@@ -21,6 +21,7 @@ import { CacheInterceptor } from './common/interceptors/cache.interceptor';
 import { SectionModule } from './modules/section/section.module';
 import { ItemModule } from './modules/item/item.module';
 import { ProductionStationModule } from './modules/production-station/production-station.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ProductionStationModule } from './modules/production-station/production
     UploadModule,
     MenuModule,
     RedisModule,
+    HealthModule,
     SectionModule,
     ItemModule,
     ProductionStationModule,
