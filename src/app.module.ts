@@ -18,6 +18,7 @@ import { UploadModule } from './infra/upload/upload.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { CacheInterceptor } from './common/interceptors/cache.interceptor';
+import { SectionModule } from './modules/section/section.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CacheInterceptor } from './common/interceptors/cache.interceptor';
     UploadModule,
     MenuModule,
     RedisModule,
+    SectionModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
