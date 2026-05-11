@@ -1,0 +1,92 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@/infra/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { TableQueryDto } from './table.dto';
+
+@Injectable()
+export class TableService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createTable(data: Prisma.TableCreateArgs['data']) {
+    const table = await this.prisma.table.create({
+      data,
+    });
+
+    return this.prisma.table.update({
+      where: { id: table.id },
+      data: {
+        slug: `t-${table.id.toString().padStart(5, '0')}`,
+      },
+    });
+  }
+
+  async updateTable(id: number, data: Prisma.TableUpdateArgs['data']) {
+    const table = await this.prisma.table.findUnique({
+      where: { id },
+    });
+
+    if (!table) {
+      throw new NotFoundException(`Table with id ${id} not found`);
+    }
+
+    return this.prisma.table.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteTable(id: number) {
+    const table = await this.prisma.table.findUnique({
+      where: { id },
+    });
+
+    if (!table) {
+      throw new NotFoundException(`Table with id ${id} not found`);
+    }
+
+    return this.prisma.table.delete({
+      where: { id },
+    });
+  }
+
+  async getAllTables({ page, limit }: TableQueryDto) {
+    const skip = (page - 1) * limit;
+
+    const tables = await this.prisma.table.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        id: 'asc',
+      },
+    });
+
+    const total = await this.prisma.table.count();
+
+    return {
+      data: tables,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getTableDetails(id: number) {
+    const table = await this.prisma.table.findUnique({
+      where: { id },
+      include: {
+        orders: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!table) {
+      throw new NotFoundException(`Table with id ${id} not found`);
+    }
+
+    return table;
+  }
+}

@@ -3,9 +3,9 @@ model Table {
 
   slug String? // t-00001
 
-  tableNumber Int?
+  tableNumber String?
 
-  qrCode String?
+  notes String?
 
   isActive Boolean? @default(true)
 
