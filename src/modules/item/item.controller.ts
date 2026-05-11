@@ -24,6 +24,7 @@ import {
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
 import { CloudinaryService } from '@/infra/upload/cloudinary.service';
 import { ParseJsonBodyInterceptor } from '@/common/interceptors/parse-json-body.interceptor';
+import type { ApiResponse } from '@/common/types/api-response';
 
 const ImageUploadInterceptor = createFileUploadInterceptor({
   fields: [
@@ -50,7 +51,7 @@ export class ItemController {
   async createItem(
     @Body() body: CreateItemDto,
     @UploadedFiles() files: { image?: Express.Multer.File[] },
-  ) {
+  ): Promise<ApiResponse> {
     if (!files?.image?.[0]) {
       throw new BadRequestException('Image file is required');
     }
@@ -75,19 +76,27 @@ export class ItemController {
   @Get()
   @CacheKey('item:all')
   @CacheTTL(60 * 60) // 1 hour
-  async getAllItems(@Query() query: ItemQueryDto) {
-    const result = await this.itemService.getAllItems(query);
+  async getAllItems(@Query() query: ItemQueryDto): Promise<ApiResponse> {
+    const [data, total] = await this.itemService.getAllItems(query);
 
     return {
       message: 'Items retrieved successfully',
-      ...result,
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 
   @Get(':id')
   @CacheKey('item::params.id')
   @CacheTTL(60 * 60) // 1 hour
-  async getItemDetails(@Param('id', ParseIntPipe) id: number) {
+  async getItemDetails(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const item = await this.itemService.getItemDetails(id);
 
     return {
@@ -103,7 +112,7 @@ export class ItemController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateItemDto,
     @UploadedFiles() files: { image?: Express.Multer.File[] },
-  ) {
+  ): Promise<ApiResponse> {
     const updateData: any = { ...body };
 
     if (files?.image?.[0]) {
@@ -126,7 +135,9 @@ export class ItemController {
   @Delete(':id')
   @InvalidateCache('item:all*', 'item::params.id')
   @HttpCode(HttpStatus.OK)
-  async deleteItem(@Param('id', ParseIntPipe) id: number) {
+  async deleteItem(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     await this.itemService.deleteItem(id);
 
     return {

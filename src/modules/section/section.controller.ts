@@ -22,6 +22,7 @@ import {
   CacheTTL,
   InvalidateCache,
 } from '@/common/decorators/cache.decorator';
+import type { ApiResponse } from '@/common/types/api-response';
 
 @Controller('section')
 export class SectionController {
@@ -30,7 +31,7 @@ export class SectionController {
   @Post()
   @InvalidateCache('section:all*')
   @HttpCode(HttpStatus.CREATED)
-  async createSection(@Body() body: CreateSectionDto) {
+  async createSection(@Body() body: CreateSectionDto): Promise<ApiResponse> {
     const data = await this.sectionService.createSection(body);
 
     return {
@@ -44,7 +45,7 @@ export class SectionController {
   @CacheTTL(60 * 60) // 1 hour
   async getAllSections(
     @Query('menuId', new ParseIntPipe({ optional: true })) menuId?: number,
-  ) {
+  ): Promise<ApiResponse> {
     const data = await this.sectionService.getAllSections(menuId);
 
     return {
@@ -56,7 +57,9 @@ export class SectionController {
   @Patch('visibility/bulk')
   @InvalidateCache('section:all*', 'section::params.id')
   @HttpCode(HttpStatus.OK)
-  async bulkUpdateVisibility(@Body() body: BulkUpdateSectionVisibilityDto) {
+  async bulkUpdateVisibility(
+    @Body() body: BulkUpdateSectionVisibilityDto,
+  ): Promise<ApiResponse> {
     const data = await this.sectionService.bulkUpdateVisibility(body.sections);
 
     return {
@@ -68,7 +71,9 @@ export class SectionController {
   @Get(':id')
   @CacheKey('section::params.id')
   @CacheTTL(60 * 60) // 1 hour
-  async getSectionDetails(@Param('id', ParseIntPipe) id: number) {
+  async getSectionDetails(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const data = await this.sectionService.getSectionDetails(id);
 
     return {
@@ -83,7 +88,7 @@ export class SectionController {
   async updateSection(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateSectionDto,
-  ) {
+  ): Promise<ApiResponse> {
     const data = await this.sectionService.updateSection(id, body);
 
     return {
@@ -95,7 +100,9 @@ export class SectionController {
   @Delete(':id')
   @InvalidateCache('section:all*', 'section::params.id')
   @HttpCode(HttpStatus.OK)
-  async deleteSection(@Param('id', ParseIntPipe) id: number) {
+  async deleteSection(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const data = await this.sectionService.deleteSection(id);
 
     return {

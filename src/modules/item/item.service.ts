@@ -51,25 +51,16 @@ export class ItemService {
   }
 
   async getAllItems({ page, limit }: ItemQueryDto) {
-    const skip = (page - 1) * limit;
-
-    const items = await this.prisma.item.findMany({
-      skip,
-      take: limit,
-      orderBy: {
-        sortOrder: 'asc',
-      },
-    });
-
-    const total = await this.prisma.item.count();
-
-    return {
-      data: items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return await Promise.all([
+      this.prisma.item.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          sortOrder: 'asc',
+        },
+      }),
+      this.prisma.item.count(),
+    ]);
   }
 
   async getItemDetails(id: number) {

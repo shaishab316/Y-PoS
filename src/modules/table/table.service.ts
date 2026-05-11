@@ -50,25 +50,16 @@ export class TableService {
   }
 
   async getAllTables({ page, limit }: TableQueryDto) {
-    const skip = (page - 1) * limit;
-
-    const tables = await this.prisma.table.findMany({
-      skip,
-      take: limit,
-      orderBy: {
-        id: 'asc',
-      },
-    });
-
-    const total = await this.prisma.table.count();
-
-    return {
-      data: tables,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return await Promise.all([
+      this.prisma.table.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          id: 'asc',
+        },
+      }),
+      this.prisma.table.count(),
+    ]);
   }
 
   async getTableDetails(id: number) {

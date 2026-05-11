@@ -18,6 +18,7 @@ import {
   CacheTTL,
   InvalidateCache,
 } from '@/common/decorators/cache.decorator';
+import type { ApiResponse } from '@/common/types/api-response';
 
 @Controller('table')
 export class TableController {
@@ -26,7 +27,7 @@ export class TableController {
   @Post()
   @InvalidateCache('table:all*')
   @HttpCode(HttpStatus.CREATED)
-  async createTable(@Body() body: CreateTableDto) {
+  async createTable(@Body() body: CreateTableDto): Promise<ApiResponse> {
     const data = await this.tableService.createTable(body);
 
     return {
@@ -39,12 +40,18 @@ export class TableController {
   @CacheKey('table:all')
   @CacheTTL(60 * 60) // 1 hour
   @HttpCode(HttpStatus.OK)
-  async getAllTables(@Query() query: TableQueryDto) {
-    const result = await this.tableService.getAllTables(query);
+  async getAllTables(@Query() query: TableQueryDto): Promise<ApiResponse> {
+    const [data, total] = await this.tableService.getAllTables(query);
 
     return {
       message: 'Tables retrieved successfully',
-      ...result,
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 
@@ -52,7 +59,9 @@ export class TableController {
   @CacheKey('table::params.id')
   @CacheTTL(60 * 60) // 1 hour
   @HttpCode(HttpStatus.OK)
-  async getTableDetails(@Param('id', ParseIntPipe) id: number) {
+  async getTableDetails(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const table = await this.tableService.getTableDetails(id);
 
     return {
@@ -67,7 +76,7 @@ export class TableController {
   async updateTable(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateTableDto,
-  ) {
+  ): Promise<ApiResponse> {
     const data = await this.tableService.updateTable(id, body);
 
     return {
@@ -79,7 +88,9 @@ export class TableController {
   @Delete(':id')
   @InvalidateCache('table:all*', 'table::params.id')
   @HttpCode(HttpStatus.OK)
-  async deleteTable(@Param('id', ParseIntPipe) id: number) {
+  async deleteTable(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const data = await this.tableService.deleteTable(id);
 
     return {

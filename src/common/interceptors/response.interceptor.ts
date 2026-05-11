@@ -8,6 +8,7 @@ import {
 import type { Response } from 'express';
 import type { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { ApiResponse } from '../types/api-response';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -34,14 +35,14 @@ export class ResponseInterceptor implements NestInterceptor {
     );
   }
 
-  private buildResponse(data: any, res: Response) {
+  private buildResponse(data: ApiResponse, res: Response) {
     const statusCode = res.statusCode;
 
     // Build response object
-    const response: any = {
+    const response: ApiResponse = {
       success: true,
       statusCode,
-      message: data?.message || 'Success',
+      message: data?.message ?? 'Success',
     };
 
     // Add pagination if present

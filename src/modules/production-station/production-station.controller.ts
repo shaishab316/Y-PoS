@@ -20,6 +20,7 @@ import {
   CacheTTL,
   InvalidateCache,
 } from '@/common/decorators/cache.decorator';
+import type { ApiResponse } from '@/common/types/api-response';
 
 @Controller('production-station')
 export class ProductionStationController {
@@ -30,7 +31,9 @@ export class ProductionStationController {
   @Post()
   @InvalidateCache('production-station:all')
   @HttpCode(HttpStatus.CREATED)
-  async createProductionStation(@Body() body: CreateProductionStationDto) {
+  async createProductionStation(
+    @Body() body: CreateProductionStationDto,
+  ): Promise<ApiResponse> {
     const data =
       await this.productionStationService.createProductionStation(body);
 
@@ -43,7 +46,7 @@ export class ProductionStationController {
   @Get()
   @CacheKey('production-station:all')
   @CacheTTL(60 * 60) // 1 hour
-  async getAllProductionStations() {
+  async getAllProductionStations(): Promise<ApiResponse> {
     const data = await this.productionStationService.getAllProductionStations();
 
     return {
@@ -55,7 +58,9 @@ export class ProductionStationController {
   @Get(':id')
   @CacheKey('production-station::params.id')
   @CacheTTL(60 * 60) // 1 hour
-  async getProductionStationDetails(@Param('id', ParseIntPipe) id: number) {
+  async getProductionStationDetails(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const data =
       await this.productionStationService.getProductionStationDetails(id);
 
@@ -71,7 +76,7 @@ export class ProductionStationController {
   async updateProductionStation(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateProductionStationDto,
-  ) {
+  ): Promise<ApiResponse> {
     const data = await this.productionStationService.updateProductionStation(
       id,
       body,
@@ -86,7 +91,9 @@ export class ProductionStationController {
   @Delete(':id')
   @InvalidateCache('production-station:all', 'production-station::params.id')
   @HttpCode(HttpStatus.OK)
-  async deleteProductionStation(@Param('id', ParseIntPipe) id: number) {
+  async deleteProductionStation(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const data =
       await this.productionStationService.deleteProductionStation(id);
 
