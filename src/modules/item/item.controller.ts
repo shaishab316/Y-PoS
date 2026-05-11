@@ -15,7 +15,15 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ItemService } from './item.service';
-import { CreateItemDto, ItemQueryDto, UpdateItemDto } from './item.dto';
+import {
+  CreateItemDto,
+  CreatePacketSectionChoiceDto,
+  CreatePacketSectionDto,
+  ItemQueryDto,
+  UpdateItemDto,
+  UpdatePacketSectionChoiceDto,
+  UpdatePacketSectionDto,
+} from './item.dto';
 import {
   CacheKey,
   CacheTTL,
@@ -37,7 +45,7 @@ const ImageUploadInterceptor = createFileUploadInterceptor({
   ],
 });
 
-@Controller('item')
+@Controller('items')
 export class ItemController {
   constructor(
     private readonly itemService: ItemService,
@@ -67,15 +75,12 @@ export class ItemController {
       imageUrl: uploaded.url,
     });
 
-    return {
-      message: 'Item created successfully',
-      data,
-    };
+    return { message: 'Item created successfully', data };
   }
 
   @Get()
   @CacheKey('item:all')
-  @CacheTTL(60 * 60) // 1 hour
+  @CacheTTL(60 * 60)
   async getAllItems(@Query() query: ItemQueryDto): Promise<ApiResponse> {
     const [data, total] = await this.itemService.getAllItems(query);
 
@@ -93,16 +98,13 @@ export class ItemController {
 
   @Get(':id')
   @CacheKey('item::params.id')
-  @CacheTTL(60 * 60) // 1 hour
+  @CacheTTL(60 * 60)
   async getItemDetails(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ApiResponse> {
-    const item = await this.itemService.getItemDetails(id);
+    const data = await this.itemService.getItemDetails(id);
 
-    return {
-      message: 'Item details retrieved successfully',
-      data: item,
-    };
+    return { message: 'Item details retrieved successfully', data };
   }
 
   @Patch(':id')
@@ -126,10 +128,7 @@ export class ItemController {
 
     const data = await this.itemService.updateItem(id, updateData);
 
-    return {
-      message: 'Item updated successfully',
-      data,
-    };
+    return { message: 'Item updated successfully', data };
   }
 
   @Delete(':id')
@@ -140,8 +139,84 @@ export class ItemController {
   ): Promise<ApiResponse> {
     await this.itemService.deleteItem(id);
 
-    return {
-      message: 'Item deleted successfully',
-    };
+    return { message: 'Item deleted successfully' };
+  }
+
+  // Packet sections
+
+  @Post(':id/packet-sections')
+  @InvalidateCache('item:all*', 'item::params.id')
+  @HttpCode(HttpStatus.CREATED)
+  async createPacketSection(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: CreatePacketSectionDto,
+  ): Promise<ApiResponse> {
+    const data = await this.itemService.createPacketSection(id, body);
+
+    return { message: 'Packet section created successfully', data };
+  }
+
+  @Patch('packet-sections/:sectionId')
+  @InvalidateCache('item:all*')
+  async updatePacketSection(
+    @Param('sectionId', ParseIntPipe) sectionId: number,
+    @Body() body: UpdatePacketSectionDto,
+  ): Promise<ApiResponse> {
+    const data = await this.itemService.updatePacketSection(sectionId, body);
+
+    return { message: 'Packet section updated successfully', data };
+  }
+
+  @Delete('packet-sections/:sectionId')
+  @InvalidateCache('item:all*')
+  @HttpCode(HttpStatus.OK)
+  async deletePacketSection(
+    @Param('sectionId', ParseIntPipe) sectionId: number,
+  ): Promise<ApiResponse> {
+    await this.itemService.deletePacketSection(sectionId);
+
+    return { message: 'Packet section deleted successfully' };
+  }
+
+  // Packet section choices
+
+  @Post('packet-sections/:sectionId/choices')
+  @InvalidateCache('item:all*')
+  @HttpCode(HttpStatus.CREATED)
+  async createPacketSectionChoice(
+    @Param('sectionId', ParseIntPipe) sectionId: number,
+    @Body() body: CreatePacketSectionChoiceDto,
+  ): Promise<ApiResponse> {
+    const data = await this.itemService.createPacketSectionChoice(
+      sectionId,
+      body,
+    );
+
+    return { message: 'Choice created successfully', data };
+  }
+
+  @Patch('packet-sections/choices/:choiceId')
+  @InvalidateCache('item:all*')
+  async updatePacketSectionChoice(
+    @Param('choiceId', ParseIntPipe) choiceId: number,
+    @Body() body: UpdatePacketSectionChoiceDto,
+  ): Promise<ApiResponse> {
+    const data = await this.itemService.updatePacketSectionChoice(
+      choiceId,
+      body,
+    );
+
+    return { message: 'Choice updated successfully', data };
+  }
+
+  @Delete('packet-sections/choices/:choiceId')
+  @InvalidateCache('item:all*')
+  @HttpCode(HttpStatus.OK)
+  async deletePacketSectionChoice(
+    @Param('choiceId', ParseIntPipe) choiceId: number,
+  ): Promise<ApiResponse> {
+    await this.itemService.deletePacketSectionChoice(choiceId);
+
+    return { message: 'Choice deleted successfully' };
   }
 }

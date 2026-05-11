@@ -30,3 +30,34 @@ export const ItemQuerySchema = z.object({
 });
 
 export class ItemQueryDto extends createZodDto(ItemQuerySchema) {}
+
+export const CreatePacketSectionSchema = z.object({
+  name: z.string().min(1).max(100),
+  maxQty: z.number().int().min(1).optional().default(1),
+  sortOrder: z.number().int().optional(),
+});
+
+export const UpdatePacketSectionSchema = CreatePacketSectionSchema.partial();
+
+export class CreatePacketSectionDto extends createZodDto(
+  CreatePacketSectionSchema,
+) {}
+export class UpdatePacketSectionDto extends createZodDto(
+  UpdatePacketSectionSchema,
+) {}
+
+export const CreatePacketSectionChoiceSchema = z.object({
+  name: z.string().min(1).max(100),
+  maxQty: z.number().int().min(1).optional().default(1),
+  sortOrder: z.number().int().optional(),
+});
+
+export const UpdatePacketSectionChoiceSchema =
+  CreatePacketSectionChoiceSchema.partial();
+
+export class CreatePacketSectionChoiceDto extends createZodDto(
+  CreatePacketSectionChoiceSchema,
+) {}
+export class UpdatePacketSectionChoiceDto extends createZodDto(
+  UpdatePacketSectionChoiceSchema,
+) {}
