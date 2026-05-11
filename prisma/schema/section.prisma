@@ -9,6 +9,16 @@ model Section {
   menuId Int?
   menu   Menu? @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
+  isVisible Boolean? @default(true)
+
+  visibleOnQrTable     Boolean? @default(true)
+  visibleOnTouchscreen Boolean? @default(true)
+  visibleOnService     Boolean? @default(true)
+  visibleOnAdmin       Boolean? @default(true)
+
+  orientationKiosk   Orientation? @default(LANDSCAPE)
+  orientationService Orientation? @default(PORTRAIT)
+
   sectionItems SectionItem[]
 
   @@map("sections")
