@@ -37,6 +37,15 @@ export const SectionQuerySchema = z.object({
   menuId: z.coerce.number().int().optional(),
 });
 
+export const AddItemToSectionSchema = z.object({
+  itemId: z.number().int(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const UpdateSectionItemSortSchema = z.object({
+  sortOrder: z.number().int(),
+});
+
 export class CreateSectionDto extends createZodDto(CreateSectionSchema) {}
 export class UpdateSectionDto extends createZodDto(UpdateSectionSchema) {}
 export class UpdateSectionVisibilityDto extends createZodDto(
@@ -46,3 +55,7 @@ export class BulkUpdateSectionVisibilityDto extends createZodDto(
   BulkUpdateSectionVisibilitySchema,
 ) {}
 export class SectionQueryDto extends createZodDto(SectionQuerySchema) {}
+export class AddItemToSectionDto extends createZodDto(AddItemToSectionSchema) {}
+export class UpdateSectionItemSortDto extends createZodDto(
+  UpdateSectionItemSortSchema,
+) {}

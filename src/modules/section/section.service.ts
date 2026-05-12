@@ -4,6 +4,8 @@ import {
   CreateSectionDto,
   UpdateSectionDto,
   SectionQueryDto,
+  AddItemToSectionDto,
+  UpdateSectionItemSortDto,
 } from './section.dto';
 import { Section, Prisma } from '@prisma/client';
 
@@ -121,5 +123,98 @@ export class SectionService {
     });
 
     return await Promise.all(updates);
+  }
+
+  async addItemToSection(sectionId: number, data: AddItemToSectionDto) {
+    // Verify section exists
+    const section = await this.getSectionDetails(sectionId);
+    if (!section) {
+      throw new NotFoundException(`Section with ID ${sectionId} not found`);
+    }
+
+    // Verify item exists
+    const item = await this.prisma.item.findUnique({
+      where: { id: data.itemId },
+    });
+    if (!item) {
+      throw new NotFoundException(`Item with ID ${data.itemId} not found`);
+    }
+
+    // Create section item link
+    const sectionItem = await this.prisma.sectionItem.create({
+      data: {
+        sectionId,
+        itemId: data.itemId,
+        sortOrder: data.sortOrder ?? 0,
+      },
+      include: {
+        item: true,
+      },
+    });
+
+    return sectionItem;
+  }
+
+  async removeItemFromSection(sectionId: number, itemId: number) {
+    // Verify section exists
+    const section = await this.getSectionDetails(sectionId);
+    if (!section) {
+      throw new NotFoundException(`Section with ID ${sectionId} not found`);
+    }
+
+    // Find and delete the section item
+    const sectionItem = await this.prisma.sectionItem.findFirst({
+      where: {
+        sectionId,
+        itemId,
+      },
+    });
+
+    if (!sectionItem) {
+      throw new NotFoundException(
+        `Item ${itemId} is not linked to section ${sectionId}`,
+      );
+    }
+
+    return await this.prisma.sectionItem.delete({
+      where: { id: sectionItem.id },
+    });
+  }
+
+  async updateSectionItemSort(
+    sectionId: number,
+    itemId: number,
+    data: UpdateSectionItemSortDto,
+  ) {
+    // Verify section exists
+    const section = await this.getSectionDetails(sectionId);
+    if (!section) {
+      throw new NotFoundException(`Section with ID ${sectionId} not found`);
+    }
+
+    // Find the section item
+    const sectionItem = await this.prisma.sectionItem.findFirst({
+      where: {
+        sectionId,
+        itemId,
+      },
+    });
+
+    if (!sectionItem) {
+      throw new NotFoundException(
+        `Item ${itemId} is not linked to section ${sectionId}`,
+      );
+    }
+
+    // Update sort order
+    return await this.prisma.sectionItem.update({
+      where: { id: sectionItem.id },
+      data: {
+        sortOrder: data.sortOrder,
+      },
+      include: {
+        item: true,
+      },
+    });
   }
 }
