@@ -25,6 +25,7 @@ import { ProductionStationModule } from './modules/production-station/production
 import { HealthModule } from './modules/health/health.module';
 import { TableModule } from './modules/table/table.module';
 import { OrderModule } from './modules/order/order.module';
+import { SocketModule } from './infra/socket/socket.module';
 
 @Module({
   imports: [
@@ -55,9 +56,10 @@ import { OrderModule } from './modules/order/order.module';
     EventEmitterModule.forRoot(),
     PrismaModule,
     UploadModule,
-    MenuModule,
     RedisModule,
+    SocketModule,
     HealthModule,
+    MenuModule,
     SectionModule,
     ItemModule,
     ProductionStationModule,

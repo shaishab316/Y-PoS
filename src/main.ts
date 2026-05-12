@@ -19,6 +19,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { BasicAuthMiddleware } from './common/middlewares/basic-auth.middleware';
 import path from 'node:path';
 import { ParseJsonBodyInterceptor } from './common/interceptors/parse-json-body.interceptor';
+import { RedisIoAdapter } from './infra/socket/redis-io.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -110,6 +111,11 @@ async function bootstrap() {
 
   // init — must be before redis adapter
   await app.init();
+
+  // redis socket.io adapter — after init so RedisService is ready
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
