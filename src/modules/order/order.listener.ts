@@ -1,10 +1,13 @@
+import { SocketGateway } from '@/infra/socket/socket.gateway';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrderListener {
-  @OnEvent('order.sent-to-production')
-  handleSentToProduction(payload: { orderId: number }) {
-    console.log('Order sent to production from OrderListener:', payload);
+  constructor(private readonly socketGateway: SocketGateway) {}
+
+  @OnEvent('order.sentToProduction')
+  handleSentToProduction(payload: any) {
+    this.socketGateway.emit('*', 'newOrder', payload);
   }
 }

@@ -19,7 +19,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor() {}
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected — socketId: ${client.id}}`);
+    this.logger.log(`Client connected — socketId: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {

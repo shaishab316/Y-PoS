@@ -248,7 +248,7 @@ export class OrderService {
       );
     }
 
-    this.eventEmitter.emit('order.sent-to-production', { orderId: order.id });
+    this.eventEmitter.emit('order.sentToProduction', { orderId: order.id });
 
     return this.prisma.order.update({
       where: { id },
