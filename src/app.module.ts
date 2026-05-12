@@ -23,6 +23,7 @@ import { ItemModule } from './modules/item/item.module';
 import { ProductionStationModule } from './modules/production-station/production-station.module';
 import { HealthModule } from './modules/health/health.module';
 import { TableModule } from './modules/table/table.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { TableModule } from './modules/table/table.module';
     ItemModule,
     ProductionStationModule,
     TableModule,
+    OrderModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
