@@ -1,4 +1,9 @@
-import { OrderSource, OrderStatus, OrderType } from '@prisma/client';
+import {
+  OrderSource,
+  OrderStatus,
+  OrderType,
+  PaymentMethod,
+} from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -36,6 +41,18 @@ export const OrderQuerySchema = z.object({
   date: z.iso.date().optional(),
 });
 
+export const SubmitPaymentSchema = z.object({
+  method: z.enum(PaymentMethod),
+  assignedToId: z.number().int().optional(),
+});
+
+export const PaginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+
 export class CreateOrderDto extends createZodDto(CreateOrderSchema) {}
 export class UpdateOrderDto extends createZodDto(UpdateOrderSchema) {}
 export class OrderQueryDto extends createZodDto(OrderQuerySchema) {}
+export class SubmitPaymentDto extends createZodDto(SubmitPaymentSchema) {}
+export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}

@@ -8,10 +8,12 @@ export interface UploadResult {
   attachmentType: string;
 }
 
+export type ResourceType = 'auto' | 'image' | 'video' | 'raw';
+
 export interface UploadOptions {
   file: Express.Multer.File;
   folder?: string;
-  resourceType?: 'auto' | 'image' | 'video' | 'raw';
+  resourceType?: ResourceType;
 }
 
 @Injectable()
@@ -60,6 +62,16 @@ export class CloudinaryService {
       publicId: result.public_id,
       attachmentType: result.resource_type,
     };
+  }
+
+  async uploadFiles(
+    files: Express.Multer.File[],
+    folder: string,
+    resourceType: ResourceType,
+  ): Promise<UploadResult[]> {
+    return Promise.all(
+      files.map((file) => this.uploadFile({ file, folder, resourceType })),
+    );
   }
 
   async deleteFile(publicId: string): Promise<void> {

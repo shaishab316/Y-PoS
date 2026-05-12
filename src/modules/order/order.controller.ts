@@ -10,19 +10,44 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { CreateOrderDto, OrderQueryDto, UpdateOrderDto } from './order.dto';
+import {
+  CreateOrderDto,
+  OrderQueryDto,
+  UpdateOrderDto,
+  SubmitPaymentDto,
+  PaginationQueryDto,
+} from './order.dto';
 import {
   InvalidateCache,
   CacheKey,
   CacheTTL,
 } from '@/common/decorators/cache.decorator';
 import type { ApiResponse } from '@/common/types/api-response';
+import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
+import { ParseJsonBodyInterceptor } from '@/common/interceptors/parse-json-body.interceptor';
+import { CloudinaryService } from '@/infra/upload/cloudinary.service';
+
+const ProofImagesUploadInterceptor = createFileUploadInterceptor({
+  fields: [
+    {
+      name: 'proofImages',
+      maxCount: 10,
+      maxFileSize: 10 * 1024 * 1024, // 10 MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    },
+  ],
+});
 
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   @Post()
   @InvalidateCache('order:all*')
@@ -33,6 +58,35 @@ export class OrderController {
     return { message: 'Order created successfully', data };
   }
 
+  @Post(':id/payment')
+  @InvalidateCache('order:all*', 'order::params.id', 'order:pending-payment')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(ProofImagesUploadInterceptor, ParseJsonBodyInterceptor)
+  async submitOrderPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: SubmitPaymentDto,
+    @UploadedFiles() files: { proofImages?: Express.Multer.File[] },
+  ): Promise<ApiResponse> {
+    const payload = {
+      ...body,
+      proofImages: [],
+    };
+
+    if (files.proofImages?.length) {
+      const uploaded = await this.cloudinary.uploadFiles(
+        files.proofImages,
+        'proof-images',
+        'image',
+      );
+
+      payload.proofImages = uploaded.map((u) => u.url) as any;
+    }
+
+    const data = await this.orderService.submitOrderPayment(id, payload);
+
+    return { message: 'Payment submitted successfully', data };
+  }
+
   @Get()
   @CacheKey('order:all')
   @CacheTTL(60)
@@ -41,6 +95,27 @@ export class OrderController {
 
     return {
       message: 'Orders retrieved successfully',
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
+    };
+  }
+
+  @Get('pending-payment')
+  @CacheKey('order:pending-payment')
+  @CacheTTL(30)
+  async getPendingPaymentOrders(
+    @Query() query: PaginationQueryDto,
+  ): Promise<ApiResponse> {
+    const [data, total] =
+      await this.orderService.getPendingPaymentOrders(query);
+
+    return {
+      message: 'Pending payment orders retrieved successfully',
       data,
       pagination: {
         page: query.page,

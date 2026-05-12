@@ -1,5 +1,5 @@
 model Payment {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   slug String? // pay-00001
 
   orderId Int?
@@ -15,7 +15,7 @@ model Payment {
   cashReceived Decimal? @db.Decimal(10, 2)
   changeAmount Decimal? @db.Decimal(10, 2)
 
-  proofImageUrl String?
+  proofImages String[]
 
   appliedCharges Json?
 

@@ -4,8 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
-import { CreateOrderDto, OrderQueryDto, UpdateOrderDto } from './order.dto';
-import { Prisma } from '@prisma/client';
+import {
+  CreateOrderDto,
+  OrderQueryDto,
+  UpdateOrderDto,
+  SubmitPaymentDto,
+  PaginationQueryDto,
+} from './order.dto';
+import { Prisma, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -191,6 +197,88 @@ export class OrderService {
         cancelledAt: new Date(),
         status: 'CANCELLED',
       },
+    });
+  }
+
+  async getPendingPaymentOrders(pagination: PaginationQueryDto) {
+    return Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          status: 'PENDING',
+          payment: {
+            none: {},
+          },
+        },
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit,
+        include: {
+          table: true,
+          assignedTo: true,
+          orderItems: { include: { item: true } },
+          payment: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.count({
+        where: {
+          status: 'PENDING',
+          payment: {
+            none: {},
+          },
+        },
+      }),
+    ]);
+  }
+
+  async submitOrderPayment(
+    orderId: number,
+    dto: SubmitPaymentDto & { proofImages: string[] },
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
+
+    if (!order)
+      throw new NotFoundException(`Order with id ${orderId} not found`);
+
+    // Check if payment already exists
+    if (order.payment.length > 0) {
+      throw new BadRequestException('Payment already submitted for this order');
+    }
+
+    // Create payment record
+    const payment = await this.prisma.payment.create({
+      data: {
+        orderId,
+        method: dto.method,
+        subtotal: order.subtotal,
+        totalAmount: order.totalAmount,
+        proofImages: dto.proofImages,
+        status: PaymentStatus.PAID,
+        paidAt: new Date(),
+      },
+    });
+
+    // Update order with assigned staff and generate payment slug
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        slug: `pay-${payment.id.toString().padStart(5, '0')}`,
+      },
+    });
+
+    // Update order to assign staff if provided
+    if (dto.assignedToId) {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { assignedToId: dto.assignedToId },
+      });
+    }
+
+    return this.prisma.payment.findUnique({
+      where: { id: payment.id },
+      include: { order: true },
     });
   }
 }
