@@ -50,7 +50,7 @@ export class OrderController {
   ) {}
 
   @Post()
-  @InvalidateCache('order:all*')
+  @InvalidateCache('order:*')
   @HttpCode(HttpStatus.CREATED)
   async createOrder(@Body() body: CreateOrderDto): Promise<ApiResponse> {
     const data = await this.orderService.createOrder(body);
@@ -59,7 +59,7 @@ export class OrderController {
   }
 
   @Post(':id/payment')
-  @InvalidateCache('order:all*', 'order::params.id', 'order:pending-payment')
+  @InvalidateCache('order:*')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(ProofImagesUploadInterceptor, ParseJsonBodyInterceptor)
   async submitOrderPayment(
@@ -138,7 +138,7 @@ export class OrderController {
   }
 
   @Patch(':id')
-  @InvalidateCache('order:all*', 'order::params.id')
+  @InvalidateCache('order:*')
   async updateOrder(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateOrderDto,
@@ -149,7 +149,7 @@ export class OrderController {
   }
 
   @Delete(':id/items/:itemId')
-  @InvalidateCache('order:all*', 'order::params.id')
+  @InvalidateCache('order:*')
   @HttpCode(HttpStatus.OK)
   async cancelOrderItem(
     @Param('id', ParseIntPipe) id: number,

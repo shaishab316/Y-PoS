@@ -201,14 +201,17 @@ export class OrderService {
   }
 
   async getPendingPaymentOrders(pagination: PaginationQueryDto) {
+    const where = {
+      payment: {
+        none: {
+          status: PaymentStatus.PAID,
+        },
+      },
+    };
+
     return Promise.all([
       this.prisma.order.findMany({
-        where: {
-          status: 'PENDING',
-          payment: {
-            none: {},
-          },
-        },
+        where,
         skip: (pagination.page - 1) * pagination.limit,
         take: pagination.limit,
         include: {
@@ -219,14 +222,7 @@ export class OrderService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.order.count({
-        where: {
-          status: 'PENDING',
-          payment: {
-            none: {},
-          },
-        },
-      }),
+      this.prisma.order.count({ where }),
     ]);
   }
 
