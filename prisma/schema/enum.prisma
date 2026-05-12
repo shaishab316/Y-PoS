@@ -13,11 +13,12 @@ enum OrderType {
 }
 
 enum OrderStatus {
-  PENDING
-  PROCESSING
-  READY
-  PICKED_UP
-  CANCELLED
+  PENDING // order created
+  PENDING_PROCESSING // waiting send-to-production
+  PROCESSING // sent to production
+  READY // all items ready
+  PICKED_UP // collected
+  CANCELLED // cancelled by customer or staff
 }
 
 enum OrderSource {

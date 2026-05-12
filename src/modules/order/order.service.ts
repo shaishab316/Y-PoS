@@ -11,11 +11,15 @@ import {
   SubmitPaymentDto,
   PaginationQueryDto,
 } from './order.dto';
-import { Prisma, PaymentStatus } from '@prisma/client';
+import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async createOrder(dto: CreateOrderDto) {
     const itemIds = dto.items.map((i) => i.itemId);
@@ -224,6 +228,33 @@ export class OrderService {
       }),
       this.prisma.order.count({ where }),
     ]);
+  }
+
+  async sendOrderToProduction(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with id ${id} not found`);
+    }
+
+    if (
+      order.status !== OrderStatus.PENDING &&
+      order.status !== OrderStatus.PENDING_PROCESSING
+    ) {
+      throw new BadRequestException(
+        `Order is in "${order.status}" status and cannot be sent to production`,
+      );
+    }
+
+    this.eventEmitter.emit('order.sent-to-production', { orderId: order.id });
+
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: OrderStatus.PENDING_PROCESSING },
+      include: { orderItems: true },
+    });
   }
 
   async submitOrderPayment(

@@ -148,6 +148,17 @@ export class OrderController {
     return { message: 'Order updated successfully', data };
   }
 
+  @Post(':id/send-to-production')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async sendOrderToProduction(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.sendOrderToProduction(id);
+
+    return { message: 'Order sent to production successfully', data };
+  }
+
   @Delete(':id/items/:itemId')
   @InvalidateCache('order:*')
   @HttpCode(HttpStatus.OK)
