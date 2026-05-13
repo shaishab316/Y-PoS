@@ -21,8 +21,10 @@ model Order {
   payment       Payment[]
   notifications Notification[]
 
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt   DateTime? @default(now())
+  processedAt DateTime?
+  readyAt     DateTime?
+  updatedAt   DateTime? @updatedAt
 
   @@map("orders")
 }

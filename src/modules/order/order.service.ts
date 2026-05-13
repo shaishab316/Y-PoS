@@ -257,6 +257,53 @@ export class OrderService {
     });
   }
 
+  async acceptOrder(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with id ${id} not found`);
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.PROCESSING,
+        processedAt: new Date(),
+      },
+      include: { orderItems: true },
+    });
+  }
+
+  async markOrderReady(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { table: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with id ${id} not found`);
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.READY,
+        readyAt: new Date(),
+      },
+      include: { orderItems: true },
+    });
+
+    // Emit event for collection alert
+    this.eventEmitter.emit('order.ready', {
+      orderId: order.id,
+      tableId: order.tableId,
+    });
+
+    return updatedOrder;
+  }
+
   async submitOrderPayment(
     orderId: number,
     dto: SubmitPaymentDto & { proofImages: string[] },

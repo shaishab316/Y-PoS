@@ -159,6 +159,28 @@ export class OrderController {
     return { message: 'Order sent to production successfully', data };
   }
 
+  @Patch(':id/accept')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async acceptOrder(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.acceptOrder(id);
+
+    return { message: 'Order accepted successfully', data };
+  }
+
+  @Patch(':id/ready')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async markOrderReady(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.markOrderReady(id);
+
+    return { message: 'Order marked as ready successfully', data };
+  }
+
   @Delete(':id/items/:itemId')
   @InvalidateCache('order:*')
   @HttpCode(HttpStatus.OK)
