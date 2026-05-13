@@ -3,7 +3,6 @@ import {
   Post,
   Get,
   Patch,
-  Delete,
   Body,
   Param,
   Query,
@@ -139,13 +138,24 @@ export class OrderController {
 
   @Patch(':id')
   @InvalidateCache('order:*')
-  async updateOrder(
+  async editOrder(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateOrderDto,
   ): Promise<ApiResponse> {
-    const data = await this.orderService.updateOrder(id, body);
+    const data = await this.orderService.editOrder(id, body);
 
-    return { message: 'Order updated successfully', data };
+    return { message: 'Order edited successfully', data };
+  }
+
+  @Patch(':id/cancel')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async cancelOrder(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.cancelOrder(id);
+
+    return { message: 'Order cancelled successfully', data };
   }
 
   @Post(':id/send-to-production')
@@ -190,17 +200,5 @@ export class OrderController {
     const data = await this.orderService.markOrderPickedUp(id);
 
     return { message: 'Order marked as picked up successfully', data };
-  }
-
-  @Delete(':id/items/:itemId')
-  @InvalidateCache('order:*')
-  @HttpCode(HttpStatus.OK)
-  async cancelOrderItem(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('itemId') itemId: string,
-  ): Promise<ApiResponse> {
-    const data = await this.orderService.cancelOrderItem(id, itemId);
-
-    return { message: 'Order item cancelled successfully', data };
   }
 }

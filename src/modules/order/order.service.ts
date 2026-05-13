@@ -185,22 +185,85 @@ export class OrderService {
     });
   }
 
-  async cancelOrderItem(orderId: number, orderItemId: string) {
-    const orderItem = await this.prisma.orderItem.findFirst({
-      where: { id: orderItemId, orderId },
+  async editOrder(id: number, dto: UpdateOrderDto) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
     });
 
-    if (!orderItem) throw new NotFoundException('Order item not found');
-    if (orderItem.isCancelled)
-      throw new BadRequestException('Item already cancelled');
+    if (!order) throw new NotFoundException(`Order with id ${id} not found`);
 
-    return this.prisma.orderItem.update({
-      where: { id: orderItemId },
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException(
+        `Cannot edit order in "${order.status}" status. Only PENDING orders can be edited.`,
+      );
+    }
+
+    const itemIds = dto.items.map((i) => i.itemId);
+    const items = await this.prisma.item.findMany({
+      where: { id: { in: itemIds } },
+    });
+
+    if (items.length !== itemIds.length) {
+      throw new NotFoundException('One or more items not found');
+    }
+
+    for (const item of items) {
+      if (item.isOutOfStock) {
+        throw new BadRequestException(`Item "${item.name}" is out of stock`);
+      }
+    }
+
+    const itemMap = new Map(items.map((i) => [i.id, i]));
+    let subtotal = 0;
+
+    const orderItems = dto.items.map((orderItem) => {
+      const item = itemMap.get(orderItem.itemId)!;
+      const unitPrice = Number(
+        item.hasPromo && item.promoPrice ? item.promoPrice : item.price,
+      );
+      subtotal += unitPrice * orderItem.quantity;
+
+      return {
+        itemId: item.id,
+        productionStationId: item.productionStationId,
+        itemName: item.name,
+        unitPrice,
+        promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
+        quantity: orderItem.quantity,
+        packetChoices: orderItem.packetChoices ?? Prisma.JsonNull,
+      };
+    });
+
+    await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
+
+    return this.prisma.order.update({
+      where: { id },
       data: {
-        isCancelled: true,
-        cancelledAt: new Date(),
-        status: 'CANCELLED',
+        subtotal,
+        totalAmount: subtotal,
+        orderItems: { create: orderItems },
       },
+      include: { orderItems: true },
+    });
+  }
+
+  async cancelOrder(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) throw new NotFoundException(`Order with id ${id} not found`);
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException(
+        `Cannot cancel order in "${order.status}" status. Only PENDING orders can be cancelled.`,
+      );
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: OrderStatus.CANCELLED },
+      include: { orderItems: true },
     });
   }
 
