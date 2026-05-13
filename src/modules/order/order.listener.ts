@@ -15,4 +15,9 @@ export class OrderListener {
   handleOrderReady(payload: any) {
     this.socketGateway.emit('*', 'orderReady', payload);
   }
+
+  @OnEvent('order.pickedUp')
+  handleOrderPickedUp(payload: any) {
+    this.socketGateway.emit('*', 'orderPickedUp', payload);
+  }
 }

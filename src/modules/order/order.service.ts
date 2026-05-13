@@ -318,6 +318,38 @@ export class OrderService {
     return updatedOrder;
   }
 
+  async markOrderPickedUp(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { table: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with id ${id} not found`);
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.PICKED_UP,
+        pickedUpAt: new Date(),
+      },
+      include: {
+        orderItems: true,
+        table: {
+          select: {
+            tableNumber: true,
+            notes: true,
+          },
+        },
+      },
+    });
+
+    this.eventEmitter.emit('order.pickedUp', updatedOrder);
+
+    return updatedOrder;
+  }
+
   async submitOrderPayment(
     orderId: number,
     dto: SubmitPaymentDto & { proofImages: string[] },

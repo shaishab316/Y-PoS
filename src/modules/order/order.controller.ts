@@ -181,6 +181,17 @@ export class OrderController {
     return { message: 'Order marked as ready successfully', data };
   }
 
+  @Patch(':id/pickup')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async markOrderPickedUp(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.markOrderPickedUp(id);
+
+    return { message: 'Order marked as picked up successfully', data };
+  }
+
   @Delete(':id/items/:itemId')
   @InvalidateCache('order:*')
   @HttpCode(HttpStatus.OK)

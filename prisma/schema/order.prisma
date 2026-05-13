@@ -24,7 +24,7 @@ model Order {
   createdAt   DateTime? @default(now())
   processedAt DateTime?
   readyAt     DateTime?
-  updatedAt   DateTime? @updatedAt
+  pickedUpAt  DateTime?
 
   @@map("orders")
 }
