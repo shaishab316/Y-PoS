@@ -15,4 +15,15 @@ export class AnalyticsController {
       data,
     };
   }
+
+  @Get('sales-report')
+  async getSalesReport(
+    @Query() query: DateRangeQueryDto,
+  ): Promise<ApiResponse> {
+    const data = await this.analyticsService.getSalesReport(query);
+    return {
+      success: true,
+      data,
+    };
+  }
 }

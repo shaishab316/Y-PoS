@@ -135,12 +135,16 @@ export class AnalyticsService {
       GROUP BY o.type
     `;
 
-    const totalOrders = breakdown.reduce((sum, item) => sum + Number(item.count), 0);
+    const totalOrders = breakdown.reduce(
+      (sum, item) => sum + Number(item.count),
+      0,
+    );
 
     return breakdown.map((item) => ({
       type: item.type === 'DINE_IN' ? 'Dine-in' : 'Takeaway',
       count: Number(item.count),
-      percentage: totalOrders > 0 ? (Number(item.count) / totalOrders) * 100 : 0,
+      percentage:
+        totalOrders > 0 ? (Number(item.count) / totalOrders) * 100 : 0,
     }));
   }
 
@@ -218,6 +222,168 @@ export class AnalyticsService {
       orderTypeBreakdown: typeBreakdown,
       salesOverTime,
       ordersPerHour,
+    };
+  }
+
+  async getSalesReport(query: DateRangeQueryDto) {
+    const { startDate, endDate } = this.getDateRange(query);
+
+    // Get sales summary
+    const salesSummary = await this.getSalesOverTime(query);
+
+    // Get top selling items
+    const topSellingItems = await this.prisma.$queryRaw<
+      Array<{
+        itemName: string;
+        category: string;
+        quantity: number;
+        revenue: string;
+      }>
+    >`
+      SELECT 
+        oi."itemName",
+        COALESCE(i."itemType", 'INDIVIDUAL') as category,
+        SUM(oi.quantity) as quantity,
+        SUM(oi.quantity * oi."unitPrice") as revenue
+      FROM order_items oi
+      LEFT JOIN items i ON oi."itemId" = i.id
+      JOIN orders o ON oi."orderId" = o.id
+      WHERE 
+        o."createdAt" >= ${startDate}
+        AND o."createdAt" <= ${endDate}
+        AND o.status != ${'CANCELLED'}
+        AND oi."isCancelled" = false
+      GROUP BY oi."itemName", i."itemType"
+      ORDER BY quantity DESC
+      LIMIT 10
+    `;
+
+    // Get order breakdown
+    const orderBreakdown = await this.prisma.$queryRaw<
+      Array<{ type: string; count: number }>
+    >`
+      SELECT 
+        COALESCE(o.type, 'DINE_IN') as type,
+        COUNT(*) as count
+      FROM orders o
+      WHERE 
+        o."createdAt" >= ${startDate}
+        AND o."createdAt" <= ${endDate}
+        AND o.status != ${'CANCELLED'}
+      GROUP BY o.type
+    `;
+
+    const totalOrderCount = orderBreakdown.reduce(
+      (sum, item) => sum + Number(item.count),
+      0,
+    );
+    const dineInCount = Number(
+      orderBreakdown.find((o) => o.type === 'DINE_IN')?.count || 0,
+    );
+    const takeawayCount = Number(
+      orderBreakdown.find((o) => o.type === 'TAKEAWAY')?.count || 0,
+    );
+
+    // Get monthly earnings (current month vs previous)
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date(currentMonthStart);
+    currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+    currentMonthEnd.setDate(0);
+    currentMonthEnd.setHours(23, 59, 59, 999);
+
+    const prevMonthStart = new Date(currentMonthStart);
+    prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+
+    const prevMonthEnd = new Date(currentMonthStart);
+    prevMonthEnd.setDate(0);
+    prevMonthEnd.setHours(23, 59, 59, 999);
+
+    const currentMonthEarnings = await this.prisma.$queryRaw<
+      Array<{ revenue: string }>
+    >`
+      SELECT SUM(CAST(p."totalAmount" AS DECIMAL(10,2))) as revenue
+      FROM payments p
+      JOIN orders o ON p."orderId" = o.id
+      WHERE 
+        p."paidAt" >= ${currentMonthStart}
+        AND p."paidAt" <= ${currentMonthEnd}
+        AND p.status = ${'PAID'}
+    `;
+
+    const prevMonthEarnings = await this.prisma.$queryRaw<
+      Array<{ revenue: string }>
+    >`
+      SELECT SUM(CAST(p."totalAmount" AS DECIMAL(10,2))) as revenue
+      FROM payments p
+      JOIN orders o ON p."orderId" = o.id
+      WHERE 
+        p."paidAt" >= ${prevMonthStart}
+        AND p."paidAt" <= ${prevMonthEnd}
+        AND p.status = ${'PAID'}
+    `;
+
+    const currentRevenue = parseFloat(currentMonthEarnings[0]?.revenue) || 0;
+    const prevRevenue = parseFloat(prevMonthEarnings[0]?.revenue) || 0;
+    const percentageChange =
+      prevRevenue > 0
+        ? ((currentRevenue - prevRevenue) / prevRevenue) * 100
+        : 0;
+
+    // Get production performance (average order processing time)
+    const productionPerformance = await this.prisma.$queryRaw<
+      Array<{
+        itemName: string;
+        avgTime: number;
+      }>
+    >`
+      SELECT 
+        oi."itemName",
+        ROUND(AVG(EXTRACT(EPOCH FROM (oi."readyAt" - oi."processedAt"))) / 60)::integer as "avgTime"
+      FROM order_items oi
+      JOIN orders o ON oi."orderId" = o.id
+      WHERE 
+        o."createdAt" >= ${startDate}
+        AND o."createdAt" <= ${endDate}
+        AND oi."readyAt" IS NOT NULL
+        AND oi."processedAt" IS NOT NULL
+      GROUP BY oi."itemName"
+      ORDER BY "avgTime" DESC
+      LIMIT 10
+    `;
+
+    return {
+      period: {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+      },
+      salesSummary,
+      monthlyEarnings: {
+        currentMonth: currentRevenue,
+        previousMonth: prevRevenue,
+        percentageChange,
+        comparisonText: `+${percentageChange.toFixed(1)}%`,
+      },
+      topSellingItems: topSellingItems.map((item) => ({
+        item: item.itemName,
+        category: item.category,
+        quantity: Number(item.quantity),
+        revenue: parseFloat(item.revenue),
+      })),
+      orderBreakdown: {
+        dineIn: dineInCount,
+        takeaway: takeawayCount,
+        dineInPercentage:
+          totalOrderCount > 0 ? (dineInCount / totalOrderCount) * 100 : 0,
+        takeawayPercentage:
+          totalOrderCount > 0 ? (takeawayCount / totalOrderCount) * 100 : 0,
+      },
+      productionPerformance: productionPerformance.map((item) => ({
+        itemName: item.itemName,
+        avgPrepTime: Number(item.avgTime),
+      })),
     };
   }
 }
