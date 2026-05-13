@@ -13,11 +13,6 @@ export class OrderListener {
 
   @OnEvent('order.ready')
   handleOrderReady(payload: any) {
-    // Emit collection alert to all clients
-    this.socketGateway.emit('*', 'orderReady', {
-      orderId: payload.orderId,
-      tableId: payload.tableId,
-      message: 'Order is ready for pickup',
-    });
+    this.socketGateway.emit('*', 'orderReady', payload);
   }
 }

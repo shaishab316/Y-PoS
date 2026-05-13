@@ -233,6 +233,16 @@ export class OrderService {
   async sendOrderToProduction(id: number) {
     const order = await this.prisma.order.findUnique({
       where: { id },
+      include: {
+        orderItems: true,
+        payment: true,
+        table: {
+          select: {
+            tableNumber: true,
+            notes: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -248,7 +258,7 @@ export class OrderService {
       );
     }
 
-    this.eventEmitter.emit('order.sentToProduction', { orderId: order.id });
+    this.eventEmitter.emit('order.sentToProduction', order);
 
     return this.prisma.order.update({
       where: { id },
@@ -292,14 +302,18 @@ export class OrderService {
         status: OrderStatus.READY,
         readyAt: new Date(),
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: true,
+        table: {
+          select: {
+            tableNumber: true,
+            notes: true,
+          },
+        },
+      },
     });
 
-    // Emit event for collection alert
-    this.eventEmitter.emit('order.ready', {
-      orderId: order.id,
-      tableId: order.tableId,
-    });
+    this.eventEmitter.emit('order.ready', updatedOrder);
 
     return updatedOrder;
   }
