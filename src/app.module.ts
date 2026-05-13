@@ -27,6 +27,7 @@ import { TableModule } from './modules/table/table.module';
 import { OrderModule } from './modules/order/order.module';
 import { SocketModule } from './infra/socket/socket.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     RedisModule,
     SocketModule,
     AnalyticsModule,
+    PaymentModule,
     HealthModule,
     MenuModule,
     SectionModule,
