@@ -29,6 +29,7 @@ import { SocketModule } from './infra/socket/socket.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { ReportingModule } from './modules/reporting/reporting.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     TableModule,
     OrderModule,
     InventoryModule,
+    ReportingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
