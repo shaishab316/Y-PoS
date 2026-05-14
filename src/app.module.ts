@@ -31,6 +31,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { UserModule } from './modules/user/user.module';
+import { OperatingHoursModule } from './modules/operating-hours/operating-hours.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { UserModule } from './modules/user/user.module';
     InventoryModule,
     ReportingModule,
     UserModule,
+    OperatingHoursModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
