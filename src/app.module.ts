@@ -30,6 +30,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { ReportingModule } from './modules/reporting/reporting.module';
     OrderModule,
     InventoryModule,
     ReportingModule,
+    UserModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
