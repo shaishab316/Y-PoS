@@ -60,6 +60,7 @@ enum UserRole {
   OWNER
   ADMIN
   SERVICE
+  USER
 }
 
 enum Orientation {

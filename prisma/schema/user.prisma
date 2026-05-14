@@ -11,6 +11,18 @@ model User {
 
   isActive Boolean? @default(true)
 
+  email String?
+
+  phone String?
+
+  photoUrl String?
+
+  address String?
+
+  facebookUrl String?
+
+  instagramUrl String?
+
   orders        Order[]
   shiftSessions ShiftSession[]
   cashProofs    CashProof[]
