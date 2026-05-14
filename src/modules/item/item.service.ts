@@ -25,9 +25,18 @@ export class ItemService {
     });
   }
 
-  async getAllItems({ page, limit }: ItemQueryDto) {
+  async getAllItems({ page, limit, search }: ItemQueryDto) {
+    const where: any = {};
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
     return Promise.all([
       this.prisma.item.findMany({
+        where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { sortOrder: 'asc' },
@@ -38,7 +47,7 @@ export class ItemService {
           },
         },
       }),
-      this.prisma.item.count(),
+      this.prisma.item.count({ where }),
     ]);
   }
 

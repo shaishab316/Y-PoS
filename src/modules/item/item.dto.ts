@@ -27,6 +27,7 @@ export class UpdateItemDto extends createZodDto(UpdateItemSchema) {}
 export const ItemQuerySchema = z.object({
   page: z.coerce.number().int().default(1),
   limit: z.coerce.number().int().default(10),
+  search: z.string().optional(),
 });
 
 export class ItemQueryDto extends createZodDto(ItemQuerySchema) {}
