@@ -7,7 +7,7 @@ export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllPayments(query: PaymentQueryDto) {
-    const { page, limit, status, method } = query;
+    const { page, limit, status, method, search } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -16,6 +16,35 @@ export class PaymentService {
     }
     if (method) {
       where.method = method;
+    }
+    if (search) {
+      where.OR = [
+        {
+          order: {
+            id: isNaN(Number(search)) ? undefined : Number(search),
+          },
+        },
+        {
+          order: {
+            customerName: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          order: {
+            orderItems: {
+              some: {
+                itemName: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        },
+      ];
     }
 
     return await Promise.all([

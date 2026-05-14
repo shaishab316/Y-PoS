@@ -12,6 +12,7 @@ export const PaymentQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(10),
   status: z.enum(PaymentStatus).optional(),
   method: z.enum(PaymentMethod).optional(),
+  search: z.string().optional(),
 });
 
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
