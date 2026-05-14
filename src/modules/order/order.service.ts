@@ -82,10 +82,30 @@ export class OrderService {
     return order;
   }
 
-  async getAllOrders({ page, limit, status, source, date }: OrderQueryDto) {
+  async getAllOrders({
+    page,
+    limit,
+    status,
+    source,
+    paymentStatus,
+    date,
+  }: OrderQueryDto) {
     const where: any = {};
     if (status) where.status = status;
     if (source) where.source = source;
+    if (paymentStatus) {
+      if (paymentStatus === PaymentStatus.PENDING) {
+        // For PENDING: include orders with no payment OR with payment status PENDING
+        where.OR = [
+          { payment: { none: {} } },
+          { payment: { some: { status: PaymentStatus.PENDING } } },
+        ];
+      } else {
+        where.payment = {
+          some: { status: paymentStatus },
+        };
+      }
+    }
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
@@ -103,6 +123,7 @@ export class OrderService {
           table: true,
           assignedTo: true,
           orderItems: { include: { item: true } },
+          payment: true,
         },
       }),
       this.prisma.order.count({ where }),

@@ -3,6 +3,7 @@ import {
   OrderStatus,
   OrderType,
   PaymentMethod,
+  PaymentStatus,
 } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
@@ -38,6 +39,7 @@ export const OrderQuerySchema = z.object({
   limit: z.coerce.number().int().min(0).max(100).default(10),
   status: z.enum(OrderStatus).optional(),
   source: z.enum(OrderSource).optional(),
+  paymentStatus: z.enum(PaymentStatus).optional(),
   date: z.iso.date().optional(),
 });
 
