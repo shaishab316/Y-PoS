@@ -32,6 +32,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { UserModule } from './modules/user/user.module';
 import { OperatingHoursModule } from './modules/operating-hours/operating-hours.module';
+import { ShiftModule } from './modules/shift/shift.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { OperatingHoursModule } from './modules/operating-hours/operating-hours.
     ReportingModule,
     UserModule,
     OperatingHoursModule,
+    ShiftModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },

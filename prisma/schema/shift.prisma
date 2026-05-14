@@ -35,10 +35,12 @@ model CashProof {
   imageUrl String?
 
   uploadedById Int?
-  uploadedBy   User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedBy   User? @relation("CashProofUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   verifiedById Int?
-  verifiedAt   DateTime?
+  verifiedBy   User? @relation("CashProofVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  verifiedAt DateTime?
 
   createdAt DateTime? @default(now())
 
