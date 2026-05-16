@@ -23,6 +23,14 @@ model User {
 
   instagramUrl String?
 
+  // Password reset fields
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  // OTP fields
+  otp       String?
+  otpExpiry DateTime?
+
   orders           Order[]
   shiftSessions    ShiftSession[]
   cashProofsUpload CashProof[]    @relation("CashProofUploadedBy")

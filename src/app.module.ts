@@ -34,6 +34,7 @@ import { UserModule } from './modules/user/user.module';
 import { OperatingHoursModule } from './modules/operating-hours/operating-hours.module';
 import { ShiftModule } from './modules/shift/shift.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { MailModule } from './infra/mail/mail.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { AuthModule } from './modules/auth/auth.module';
     UploadModule,
     RedisModule,
     SocketModule,
+    MailModule,
     AnalyticsModule,
     PaymentModule,
     HealthModule,
