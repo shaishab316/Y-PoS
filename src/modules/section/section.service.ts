@@ -42,6 +42,9 @@ export class SectionService {
   async getSectionDetails(id: number) {
     return await this.prisma.section.findUnique({
       where: { id },
+      include: {
+        menu: true,
+      },
     });
   }
 

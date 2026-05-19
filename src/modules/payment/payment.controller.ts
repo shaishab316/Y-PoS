@@ -17,6 +17,7 @@ export class PaymentController {
   @Get()
   async getAllPayments(@Query() query: PaymentQueryDto): Promise<ApiResponse> {
     const [data, total] = await this.paymentService.getAllPayments(query);
+    const meta = await this.paymentService.getPaymentMetrics();
 
     return {
       success: true,
@@ -27,6 +28,7 @@ export class PaymentController {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
+      meta,
     };
   }
 

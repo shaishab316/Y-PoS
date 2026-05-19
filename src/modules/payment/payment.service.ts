@@ -113,4 +113,61 @@ export class PaymentService {
       order: payment.order,
     };
   }
+
+  async getPaymentMetrics() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Calculate today's earnings
+    const todayPayments = await this.prisma.payment.aggregate({
+      where: {
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+        status: 'PAID',
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    });
+
+    const todayEarning = Number(todayPayments._sum.totalAmount) || 0;
+
+    // Calculate yesterday's earnings
+    const yesterdayPayments = await this.prisma.payment.aggregate({
+      where: {
+        createdAt: {
+          gte: yesterday,
+          lt: today,
+        },
+        status: 'PAID',
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    });
+
+    const yesterdayEarning = Number(yesterdayPayments._sum.totalAmount) || 0;
+
+    // Calculate growth rate
+    let todayGrowthRate = 0;
+    if (yesterdayEarning > 0) {
+      todayGrowthRate =
+        ((todayEarning - yesterdayEarning) / yesterdayEarning) * 100;
+    } else if (todayEarning > 0) {
+      todayGrowthRate = 100;
+    }
+
+    return {
+      todayEarning,
+      todayGrowthRate: Math.round(todayGrowthRate * 100) / 100, // Round to 2 decimal places
+    };
+  }
 }
