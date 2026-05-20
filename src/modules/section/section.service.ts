@@ -44,6 +44,20 @@ export class SectionService {
       where: { id },
       include: {
         menu: true,
+        sectionItems: {
+          select: {
+            item: {
+              include: {
+                packetSections: {
+                  include: {
+                    choices: true,
+                  },
+                },
+                productionStation: true,
+              },
+            },
+          },
+        },
       },
     });
   }
