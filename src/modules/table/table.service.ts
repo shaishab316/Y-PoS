@@ -49,16 +49,26 @@ export class TableService {
     });
   }
 
-  async getAllTables({ page, limit }: TableQueryDto) {
+  async getAllTables({ page, limit, search }: TableQueryDto) {
+    const where: Prisma.TableWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { tableNumber: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     return await Promise.all([
       this.prisma.table.findMany({
+        where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
           id: 'asc',
         },
       }),
-      this.prisma.table.count(),
+      this.prisma.table.count({ where }),
     ]);
   }
 
