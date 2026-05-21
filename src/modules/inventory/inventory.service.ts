@@ -105,33 +105,17 @@ export class InventoryService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Get opening stock (last closing stock of previous day or current item qty)
+    // Get the most recent log (could be from today or before)
     const lastLog = await this.prisma.inventoryLog.findFirst({
       where: { itemId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     });
 
+    // Opening stock is the last log's closing stock, or current item qty if no log exists
     const openingStock = lastLog?.closingStock ?? item.inventoryQty ?? 0;
 
-    // Calculate closing stock: opening + stock in - stock out (today)
-    const todayLogs = await this.prisma.inventoryLog.findMany({
-      where: {
-        itemId,
-        date: {
-          gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    });
-
-    const totalStockOut = todayLogs.reduce(
-      (sum, log) => sum + (log.stockOut || 0),
-      0,
-    );
-    const totalStockIn =
-      todayLogs.reduce((sum, log) => sum + (log.stockIn || 0), 0) + qty;
-
-    const closingStock = openingStock + totalStockIn - totalStockOut;
+    // Closing stock = opening + stock in
+    const closingStock = openingStock + qty;
 
     // Update item inventory
     const updatedItem = await this.prisma.item.update({
@@ -176,38 +160,22 @@ export class InventoryService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Get opening stock (last closing stock of previous day or current item qty)
+    // Get the most recent log (could be from today or before)
     const lastLog = await this.prisma.inventoryLog.findFirst({
       where: { itemId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     });
 
+    // Opening stock is the last log's closing stock, or current item qty if no log exists
     const openingStock = lastLog?.closingStock ?? item.inventoryQty ?? 0;
 
-    // Calculate current day's movements
-    const todayLogs = await this.prisma.inventoryLog.findMany({
-      where: {
-        itemId,
-        date: {
-          gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    });
-
-    const totalStockOut =
-      todayLogs.reduce((sum, log) => sum + (log.stockOut || 0), 0) + qty;
-    const totalStockIn = todayLogs.reduce(
-      (sum, log) => sum + (log.stockIn || 0),
-      0,
-    );
-
-    const closingStock = openingStock + totalStockIn - totalStockOut;
+    // Closing stock = opening - stock out
+    const closingStock = openingStock - qty;
 
     // Validate sufficient stock
     if (closingStock < 0) {
       throw new Error(
-        `Insufficient stock. Available: ${openingStock + totalStockIn}, Requested: ${qty}`,
+        `Insufficient stock. Available: ${openingStock}, Requested: ${qty}`,
       );
     }
 

@@ -16,13 +16,34 @@ export class ItemService {
   async createItem(data: Prisma.ItemCreateArgs['data']) {
     const item = await this.prisma.item.create({ data });
 
-    return this.prisma.item.update({
+    const updatedItem = await this.prisma.item.update({
       where: { id: item.id },
       data: {
         slug: `i-${item.id.toString().padStart(5, '0')}`,
         sortOrder: data?.sortOrder ?? item.id,
       },
     });
+
+    // Create initial inventory log if inventoryQty is provided and greater than 0
+    if (data!.inventoryQty && data!.inventoryQty > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      await this.prisma.inventoryLog.create({
+        data: {
+          itemId: item.id,
+          itemName: item.name,
+          date: today,
+          openingStock: 0,
+          stockIn: data!.inventoryQty,
+          stockOut: 0,
+          closingStock: data!.inventoryQty,
+          remarks: 'Initial stock',
+        },
+      });
+    }
+
+    return updatedItem;
   }
 
   async getAllItems({ page, limit, search }: ItemQueryDto) {
