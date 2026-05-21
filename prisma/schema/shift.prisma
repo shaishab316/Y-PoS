@@ -2,7 +2,7 @@ model ShiftSession {
   id String @id @default(uuid())
 
   userId Int?
-  user   User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user   User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   type ShiftType?
 

@@ -36,7 +36,7 @@ model OrderItem {
   order   Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   itemId Int?
-  item   Item? @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  item   Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
   productionStationId Int?
   productionStation   ProductionStation? @relation(fields: [productionStationId], references: [id], onDelete: SetNull)
