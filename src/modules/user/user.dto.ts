@@ -8,7 +8,7 @@ export const CreateUserSchema = z.object({
   email: z.string().email('Invalid email format').optional(),
   phone: _.phoneNumber().optional(),
   password: _.password({ level: 'weak' }),
-  role: z.enum(UserRole).optional().default(UserRole.ADMIN),
+  role: z.enum(UserRole).optional(),
   photoUrl: z.string().url().optional(),
   address: z.string().max(255).optional(),
   facebookUrl: z.string().url().optional(),

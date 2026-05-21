@@ -5,7 +5,16 @@ const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
 
 const timeSchema = z
   .string()
-  .regex(timeRegex, 'Invalid time format. Use HH:mm')
+  // .regex(timeRegex, 'Invalid time format. Use HH:mm')
+  .refine((val) => {
+    if (val) {
+      if (!timeRegex.test(val)) {
+        throw new Error('Invalid time format. Use HH:mm');
+      }
+    }
+
+    return true;
+  })
   .optional()
   .nullable();
 
