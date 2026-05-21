@@ -31,7 +31,7 @@ export class ProductionStationController {
   ) {}
 
   @Post()
-  @InvalidateCache('production-station:all')
+  @InvalidateCache('production-station:all*')
   @HttpCode(HttpStatus.CREATED)
   async createProductionStation(
     @Body() body: CreateProductionStationDto,
@@ -82,7 +82,7 @@ export class ProductionStationController {
   }
 
   @Patch(':id')
-  @InvalidateCache('production-station:all', 'production-station::params.id')
+  @InvalidateCache('production-station:all*', 'production-station::params.id')
   @HttpCode(HttpStatus.OK)
   async updateProductionStation(
     @Param('id', ParseIntPipe) id: number,
@@ -100,7 +100,7 @@ export class ProductionStationController {
   }
 
   @Delete(':id')
-  @InvalidateCache('production-station:all', 'production-station::params.id')
+  @InvalidateCache('production-station:all*', 'production-station::params.id')
   @HttpCode(HttpStatus.OK)
   async deleteProductionStation(
     @Param('id', ParseIntPipe) id: number,
