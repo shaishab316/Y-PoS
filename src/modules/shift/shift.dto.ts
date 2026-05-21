@@ -28,3 +28,15 @@ export const VerifyCashProofSchema = z.object({
 });
 
 export class VerifyCashProofDto extends createZodDto(VerifyCashProofSchema) {}
+
+export const ShiftHistoryQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  status: z.enum(['OPENING', 'CLOSING']).optional(),
+});
+
+export class ShiftHistoryQueryDto extends createZodDto(
+  ShiftHistoryQuerySchema,
+) {}

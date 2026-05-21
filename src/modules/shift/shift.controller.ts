@@ -13,7 +13,12 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ShiftService } from './shift.service';
-import { OpenShiftDto, CloseShiftDto, VerifyCashProofDto } from './shift.dto';
+import {
+  OpenShiftDto,
+  CloseShiftDto,
+  VerifyCashProofDto,
+  ShiftHistoryQueryDto,
+} from './shift.dto';
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
 import { CloudinaryService } from '@/infra/upload/cloudinary.service';
 import type { ApiResponse } from '@/common/types/api-response';
@@ -92,6 +97,33 @@ export class ShiftController {
       success: true,
       message: 'Current shift retrieved successfully',
       data,
+    };
+  }
+
+  /**
+   * GET /shift/history/:userId — get shift history
+   * Returns all shifts for a user with optional filtering and pagination
+   */
+  @Get('history/:userId')
+  async getShiftHistory(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: ShiftHistoryQueryDto,
+  ): Promise<ApiResponse> {
+    const [data, total] = await this.shiftService.getShiftHistory(
+      userId,
+      query,
+    );
+
+    return {
+      success: true,
+      message: 'Shift history retrieved successfully',
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 

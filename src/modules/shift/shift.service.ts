@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { CloudinaryService } from '@/infra/upload/cloudinary.service';
-import { OpenShiftDto, CloseShiftDto, VerifyCashProofDto } from './shift.dto';
+import {
+  OpenShiftDto,
+  CloseShiftDto,
+  VerifyCashProofDto,
+  ShiftHistoryQueryDto,
+} from './shift.dto';
 import { Decimal } from '@prisma/client/runtime/client';
 
 @Injectable()
@@ -190,7 +195,7 @@ export class ShiftService {
     });
 
     if (!shift) {
-      throw new NotFoundException('No active shift found for this user');
+      return {};
     }
 
     return this._formatShiftResponse(shift);
@@ -403,5 +408,69 @@ export class ShiftService {
       })),
       createdAt: shift.createdAt,
     };
+  }
+
+  /**
+   * Get shift history for a user with optional filtering
+   */
+  async getShiftHistory(userId: number, query: ShiftHistoryQueryDto) {
+    // Verify user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { page, limit, startDate, endDate, status } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+
+    // Filter by status (OPENING or CLOSING)
+    if (status) {
+      where.type = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    return await Promise.all([
+      this.prisma.shiftSession.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          cashProofs: {
+            select: {
+              id: true,
+              imageUrl: true,
+              uploadedById: true,
+              verifiedById: true,
+              verifiedAt: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+      this.prisma.shiftSession.count({ where }),
+    ]);
   }
 }
