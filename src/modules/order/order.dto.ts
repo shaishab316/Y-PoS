@@ -41,6 +41,7 @@ export const OrderQuerySchema = z.object({
   source: z.enum(OrderSource).optional(),
   paymentStatus: z.enum(PaymentStatus).optional(),
   date: z.iso.date().optional(),
+  search: z.string().optional(),
 });
 
 export const SubmitPaymentSchema = z.object({

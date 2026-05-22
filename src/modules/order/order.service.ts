@@ -89,6 +89,7 @@ export class OrderService {
     source,
     paymentStatus,
     date,
+    search,
   }: OrderQueryDto) {
     const where: any = {};
     if (status) where.status = status;
@@ -111,6 +112,28 @@ export class OrderService {
       const end = new Date(date);
       end.setDate(end.getDate() + 1);
       where.createdAt = { gte: start, lt: end };
+    }
+    if (search) {
+      if (where.OR) {
+        // If OR already exists for paymentStatus, add search to existing OR
+        where.OR.push(
+          { customerName: { contains: search, mode: 'insensitive' } },
+          {
+            orderItems: {
+              some: { itemName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        );
+      } else {
+        where.OR = [
+          { customerName: { contains: search, mode: 'insensitive' } },
+          {
+            orderItems: {
+              some: { itemName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        ];
+      }
     }
 
     return Promise.all([
