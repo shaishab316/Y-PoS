@@ -30,7 +30,12 @@ export const UserQuerySchema = z.object({
   role: z.enum(UserRole).optional(),
 });
 
+export const UserForShiftQuerySchema = UserQuerySchema.omit({ role: true });
+
 export class CreateUserDto extends createZodDto(CreateUserSchema) {}
 export class UpdateUserDto extends createZodDto(UpdateUserSchema) {}
 export class ChangePasswordDto extends createZodDto(ChangePasswordSchema) {}
 export class UserQueryDto extends createZodDto(UserQuerySchema) {}
+export class UserForShiftQueryDto extends createZodDto(
+  UserForShiftQuerySchema,
+) {}

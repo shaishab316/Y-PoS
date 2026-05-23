@@ -58,5 +58,13 @@ export const PaginationQuerySchema = z.object({
 export class CreateOrderDto extends createZodDto(CreateOrderSchema) {}
 export class UpdateOrderDto extends createZodDto(UpdateOrderSchema) {}
 export class OrderQueryDto extends createZodDto(OrderQuerySchema) {}
+
+const OrderProductionQuerySchema = OrderQuerySchema.omit({
+  status: true,
+});
+
+export class OrderProductionQueryDto extends createZodDto(
+  OrderProductionQuerySchema,
+) {}
 export class SubmitPaymentDto extends createZodDto(SubmitPaymentSchema) {}
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}

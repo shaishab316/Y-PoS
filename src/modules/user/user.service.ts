@@ -9,8 +9,10 @@ import {
   UpdateUserDto,
   ChangePasswordDto,
   UserQueryDto,
+  UserForShiftQueryDto,
 } from './user.dto';
 import { hashPassword } from '@/common/helpers/hash.helper';
+import { Prisma, UserRole } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -86,6 +88,62 @@ export class UserService {
 
     if (role) {
       where.role = role;
+    }
+
+    return Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          role: true,
+          email: true,
+          phone: true,
+          photoUrl: true,
+          address: true,
+          facebookUrl: true,
+          instagramUrl: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+  }
+
+  async getAllUsersForShift({ page, limit, search }: UserForShiftQueryDto) {
+    const where: Prisma.UserWhereInput = {
+      role: {
+        in: [UserRole.SERVICE, UserRole.ADMIN],
+      },
+    };
+
+    if (search) {
+      where.OR = [
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          email: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          phone: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
     }
 
     return Promise.all([

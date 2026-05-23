@@ -19,6 +19,7 @@ import {
   UpdateUserDto,
   ChangePasswordDto,
   UserQueryDto,
+  UserForShiftQueryDto,
 } from './user.dto';
 import {
   CacheKey,
@@ -77,6 +78,26 @@ export class UserController {
   @CacheTTL(60 * 60)
   async getAllUsers(@Query() query: UserQueryDto): Promise<ApiResponse> {
     const [data, total] = await this.userService.getAllUsers(query);
+
+    return {
+      message: 'Users retrieved successfully',
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
+    };
+  }
+
+  @Get('for-shift')
+  @CacheKey('user:for-shift')
+  @CacheTTL(60 * 60)
+  async getAllUsersForShift(
+    @Query() query: UserForShiftQueryDto,
+  ): Promise<ApiResponse> {
+    const [data, total] = await this.userService.getAllUsersForShift(query);
 
     return {
       message: 'Users retrieved successfully',

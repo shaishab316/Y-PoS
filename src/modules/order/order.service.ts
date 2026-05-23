@@ -10,6 +10,7 @@ import {
   UpdateOrderDto,
   SubmitPaymentDto,
   PaginationQueryDto,
+  OrderProductionQueryDto,
 } from './order.dto';
 import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -94,6 +95,78 @@ export class OrderService {
   }: OrderQueryDto) {
     const where: any = {};
     if (status) where.status = status;
+    if (source) where.source = source;
+    if (paymentStatus) {
+      if (paymentStatus === PaymentStatus.PENDING) {
+        // For PENDING: include orders with no payment OR with payment status PENDING
+        where.OR = [
+          { payment: { none: {} } },
+          { payment: { some: { status: PaymentStatus.PENDING } } },
+        ];
+      } else {
+        where.payment = {
+          some: { status: paymentStatus },
+        };
+      }
+    }
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setDate(end.getDate() + 1);
+      where.createdAt = { gte: start, lt: end };
+    }
+    if (search) {
+      if (where.OR) {
+        // If OR already exists for paymentStatus, add search to existing OR
+        where.OR.push(
+          { customerName: { contains: search, mode: 'insensitive' } },
+          {
+            orderItems: {
+              some: { itemName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        );
+      } else {
+        where.OR = [
+          { customerName: { contains: search, mode: 'insensitive' } },
+          {
+            orderItems: {
+              some: { itemName: { contains: search, mode: 'insensitive' } },
+            },
+          },
+        ];
+      }
+    }
+
+    return Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          table: true,
+          assignedTo: true,
+          orderItems: { include: { item: true } },
+          payment: true,
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+  }
+
+  async getAllProductionOrders({
+    page,
+    limit,
+    source,
+    paymentStatus,
+    date,
+    search,
+  }: OrderProductionQueryDto) {
+    const where: Prisma.OrderWhereInput = {
+      status: { notIn: [OrderStatus.CANCELLED, OrderStatus.PENDING] },
+    };
+
     if (source) where.source = source;
     if (paymentStatus) {
       if (paymentStatus === PaymentStatus.PENDING) {
