@@ -15,7 +15,7 @@ export const CreateItemSchema = z.object({
   hasPromo: z.boolean().optional().default(false),
   promoName: z.string().max(100).optional(),
   promoPrice: z.number().int().min(0).optional(),
-  maxPacketItems: z.number().int().optional(),
+  // maxPacketItems: z.number().int().optional(),
   sortOrder: z.number().int().optional(),
 });
 

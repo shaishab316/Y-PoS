@@ -120,7 +120,7 @@ CREATE TABLE "items" (
     "hasPromo" BOOLEAN DEFAULT false,
     "promoName" TEXT,
     "promoPrice" DECIMAL(10,2),
-    "maxPacketItems" INTEGER,
+    -- "maxPacketItems" INTEGER,
     "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3),
 

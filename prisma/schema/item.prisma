@@ -22,7 +22,7 @@ model Item {
   promoName  String?
   promoPrice Decimal? @db.Decimal(10, 2)
 
-  maxPacketItems Int?
+  // maxPacketItems Int?
   packetSections PacketSection[]
 
   sectionItems SectionItem[]

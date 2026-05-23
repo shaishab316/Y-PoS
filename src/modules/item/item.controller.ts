@@ -53,7 +53,7 @@ export class ItemController {
   ) {}
 
   @Post()
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(ImageUploadInterceptor, ParseJsonBodyInterceptor)
   async createItem(
@@ -108,7 +108,7 @@ export class ItemController {
   }
 
   @Patch(':id')
-  @InvalidateCache('item:all*', 'item::params.id')
+  @InvalidateCache('item:all*', 'item::params.id', 'menu:*')
   @UseInterceptors(ImageUploadInterceptor, ParseJsonBodyInterceptor)
   async updateItem(
     @Param('id', ParseIntPipe) id: number,
@@ -132,7 +132,7 @@ export class ItemController {
   }
 
   @Delete(':id')
-  @InvalidateCache('item:all*', 'item::params.id')
+  @InvalidateCache('item:all*', 'item::params.id', 'menu:*')
   @HttpCode(HttpStatus.OK)
   async deleteItem(
     @Param('id', ParseIntPipe) id: number,
@@ -145,7 +145,7 @@ export class ItemController {
   // Packet sections
 
   @Post(':id/packet-sections')
-  @InvalidateCache('item:all*', 'item::params.id')
+  @InvalidateCache('item:all*', 'item::params.id', 'menu:*')
   @HttpCode(HttpStatus.CREATED)
   async createPacketSection(
     @Param('id', ParseIntPipe) id: number,
@@ -157,7 +157,7 @@ export class ItemController {
   }
 
   @Patch('packet-sections/:sectionId')
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   async updatePacketSection(
     @Param('sectionId', ParseIntPipe) sectionId: number,
     @Body() body: UpdatePacketSectionDto,
@@ -168,7 +168,7 @@ export class ItemController {
   }
 
   @Delete('packet-sections/:sectionId')
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   @HttpCode(HttpStatus.OK)
   async deletePacketSection(
     @Param('sectionId', ParseIntPipe) sectionId: number,
@@ -181,7 +181,7 @@ export class ItemController {
   // Packet section choices
 
   @Post('packet-sections/:sectionId/choices')
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   @HttpCode(HttpStatus.CREATED)
   async createPacketSectionChoice(
     @Param('sectionId', ParseIntPipe) sectionId: number,
@@ -196,7 +196,7 @@ export class ItemController {
   }
 
   @Patch('packet-sections/choices/:choiceId')
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   async updatePacketSectionChoice(
     @Param('choiceId', ParseIntPipe) choiceId: number,
     @Body() body: UpdatePacketSectionChoiceDto,
@@ -210,7 +210,7 @@ export class ItemController {
   }
 
   @Delete('packet-sections/choices/:choiceId')
-  @InvalidateCache('item:all*')
+  @InvalidateCache('item:all*', 'menu:*')
   @HttpCode(HttpStatus.OK)
   async deletePacketSectionChoice(
     @Param('choiceId', ParseIntPipe) choiceId: number,
