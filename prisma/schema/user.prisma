@@ -31,7 +31,9 @@ model User {
   otp       String?
   otpExpiry DateTime?
 
-  orders           Order[]
+  orders         Order[] @relation("userOrders")
+  assignedOrders Order[] @relation("assignedToOrders")
+
   shiftSessions    ShiftSession[]
   cashProofsUpload CashProof[]    @relation("CashProofUploadedBy")
   cashProofsVerify CashProof[]    @relation("CashProofVerifiedBy")

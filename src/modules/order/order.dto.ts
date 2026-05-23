@@ -23,6 +23,7 @@ const OrderItemSchema = z.object({
 });
 
 export const CreateOrderSchema = z.object({
+  userId: z.number().int().optional(),
   source: z.enum(OrderSource),
   type: z.enum(OrderType).optional().default(OrderType.DINE_IN),
   tableId: z.number().int().optional(),
