@@ -114,7 +114,7 @@ export class AnalyticsService {
       totalRevenue,
       totalOrders,
       averageOrderValue,
-      percentageChange,
+      percentageChange: percentageChange.toFixed(2),
     };
   }
 
