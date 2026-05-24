@@ -45,10 +45,26 @@ export class ShiftService {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (activeShift) {
-      throw new BadRequestException('User already has an active shift today');
+    if (activeShift?.type === 'OPENING') {
+      return {
+        id: activeShift.id,
+        userId: activeShift.userId,
+        user: activeShift.user,
+        type: activeShift.type,
+        createdAt: activeShift.createdAt,
+      };
     }
 
     // Create new shift session

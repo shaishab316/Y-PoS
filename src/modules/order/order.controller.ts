@@ -20,6 +20,7 @@ import {
   SubmitPaymentDto,
   PaginationQueryDto,
   OrderProductionQueryDto,
+  GetUserActiveOrdersDto,
 } from './order.dto';
 import {
   InvalidateCache,
@@ -92,6 +93,26 @@ export class OrderController {
   @CacheTTL(60)
   async getAllOrders(@Query() query: OrderQueryDto): Promise<ApiResponse> {
     const [data, total] = await this.orderService.getAllOrders(query);
+
+    return {
+      message: 'Orders retrieved successfully',
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
+    };
+  }
+
+  @Get('active')
+  @CacheKey('order:active::query.userId')
+  @CacheTTL(60)
+  async gerUserActiveOrders(
+    @Query() query: GetUserActiveOrdersDto,
+  ): Promise<ApiResponse> {
+    const [data, total] = await this.orderService.gerUserActiveOrders(query);
 
     return {
       message: 'Orders retrieved successfully',

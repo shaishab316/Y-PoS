@@ -68,3 +68,13 @@ export class OrderProductionQueryDto extends createZodDto(
 ) {}
 export class SubmitPaymentDto extends createZodDto(SubmitPaymentSchema) {}
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
+
+export const GetUserActiveOrdersSchema = z.object({
+  userId: z.coerce.number().int(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+
+export class GetUserActiveOrdersDto extends createZodDto(
+  GetUserActiveOrdersSchema,
+) {}

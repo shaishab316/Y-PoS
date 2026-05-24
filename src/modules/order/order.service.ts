@@ -11,6 +11,7 @@ import {
   SubmitPaymentDto,
   PaginationQueryDto,
   OrderProductionQueryDto,
+  GetUserActiveOrdersDto,
 } from './order.dto';
 import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -115,27 +116,23 @@ export class OrderService {
       end.setDate(end.getDate() + 1);
       where.createdAt = { gte: start, lt: end };
     }
+
     if (search) {
-      if (where.OR) {
-        // If OR already exists for paymentStatus, add search to existing OR
-        where.OR.push(
-          { customerName: { contains: search, mode: 'insensitive' } },
-          {
-            orderItems: {
-              some: { itemName: { contains: search, mode: 'insensitive' } },
-            },
-          },
-        );
-      } else {
-        where.OR = [
-          { customerName: { contains: search, mode: 'insensitive' } },
-          {
-            orderItems: {
-              some: { itemName: { contains: search, mode: 'insensitive' } },
-            },
-          },
-        ];
+      if (!where.OR) {
+        where.OR = [];
       }
+
+      where.OR.push(
+        { customerName: { contains: search, mode: 'insensitive' } },
+        {
+          orderItems: {
+            some: { itemName: { contains: search, mode: 'insensitive' } },
+          },
+        },
+        {
+          slug: { contains: search, mode: 'insensitive' },
+        },
+      );
     }
 
     return Promise.all([
@@ -187,27 +184,23 @@ export class OrderService {
       end.setDate(end.getDate() + 1);
       where.createdAt = { gte: start, lt: end };
     }
+
     if (search) {
-      if (where.OR) {
-        // If OR already exists for paymentStatus, add search to existing OR
-        where.OR.push(
-          { customerName: { contains: search, mode: 'insensitive' } },
-          {
-            orderItems: {
-              some: { itemName: { contains: search, mode: 'insensitive' } },
-            },
-          },
-        );
-      } else {
-        where.OR = [
-          { customerName: { contains: search, mode: 'insensitive' } },
-          {
-            orderItems: {
-              some: { itemName: { contains: search, mode: 'insensitive' } },
-            },
-          },
-        ];
+      if (!where.OR) {
+        where.OR = [];
       }
+
+      where.OR.push(
+        { customerName: { contains: search, mode: 'insensitive' } },
+        {
+          orderItems: {
+            some: { itemName: { contains: search, mode: 'insensitive' } },
+          },
+        },
+        {
+          slug: { contains: search, mode: 'insensitive' },
+        },
+      );
     }
 
     return Promise.all([
@@ -581,5 +574,33 @@ export class OrderService {
       where: { id: payment.id },
       include: { order: true },
     });
+  }
+
+  async gerUserActiveOrders({ limit, page, userId }: GetUserActiveOrdersDto) {
+    const where: Prisma.OrderWhereInput = {
+      userId,
+      status: {
+        not: OrderStatus.CANCELLED,
+      },
+      createdAt: {
+        gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // last 24 hours
+      },
+    };
+
+    return await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          table: true,
+          assignedTo: true,
+          orderItems: { include: { item: true } },
+          payment: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
   }
 }
