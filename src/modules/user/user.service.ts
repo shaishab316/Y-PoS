@@ -43,6 +43,7 @@ export class UserService {
         address: data.address,
         facebookUrl: data.facebookUrl,
         instagramUrl: data.instagramUrl,
+        productionStationId: data.productionStationId,
         isActive: true,
       },
     });
@@ -56,6 +57,10 @@ export class UserService {
 
       omit: {
         passwordHash: true,
+      },
+
+      include: {
+        productionStation: true,
       },
     });
   }
@@ -109,6 +114,8 @@ export class UserService {
           isActive: true,
           createdAt: true,
           updatedAt: true,
+
+          productionStation: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -165,6 +172,8 @@ export class UserService {
           isActive: true,
           createdAt: true,
           updatedAt: true,
+
+          productionStation: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -189,6 +198,8 @@ export class UserService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+
+        productionStation: true,
       },
     });
 
@@ -224,6 +235,7 @@ export class UserService {
         address: data.address,
         facebookUrl: data.facebookUrl,
         instagramUrl: data.instagramUrl,
+        productionStationId: data.productionStationId,
       },
       select: {
         id: true,
@@ -239,6 +251,8 @@ export class UserService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+
+        productionStation: true,
       },
     });
   }

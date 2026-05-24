@@ -31,6 +31,9 @@ model User {
   otp       String?
   otpExpiry DateTime?
 
+  productionStationId Int?
+  productionStation   ProductionStation? @relation(fields: [productionStationId], references: [id], onDelete: SetNull)
+
   orders         Order[] @relation("userOrders")
   assignedOrders Order[] @relation("assignedToOrders")
 

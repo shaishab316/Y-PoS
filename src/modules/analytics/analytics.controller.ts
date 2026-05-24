@@ -21,6 +21,12 @@ export class AnalyticsController {
     @Query() query: DateRangeQueryDto,
   ): Promise<ApiResponse> {
     const data = await this.analyticsService.getSalesReport(query);
+
+    data.productionPerformance.push({
+      itemName: 'Gugu',
+      avgPrepTime: 5,
+    });
+
     return {
       success: true,
       data,

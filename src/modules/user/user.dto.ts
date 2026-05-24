@@ -5,7 +5,7 @@ import z from 'zod';
 
 export const CreateUserSchema = z.object({
   name: _.name({ field: 'User name' }),
-  email: z.string().email('Invalid email format').optional(),
+  email: _.email().optional(),
   phone: _.phoneNumber().optional(),
   password: _.password({ level: 'weak' }),
   role: z.enum(UserRole).optional(),
@@ -13,6 +13,7 @@ export const CreateUserSchema = z.object({
   address: z.string().max(255).optional(),
   facebookUrl: z.string().url().optional(),
   instagramUrl: z.string().url().optional(),
+  productionStationId: z.number().int().optional(),
 });
 
 export const UpdateUserSchema = CreateUserSchema.omit({

@@ -10,5 +10,7 @@ model ProductionStation {
   items      Item[]
   orderItems OrderItem[]
 
+  users User[]
+
   @@map("production_stations")
 }
