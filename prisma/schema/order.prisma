@@ -6,6 +6,8 @@ model Order {
   type   OrderType?   @default(DINE_IN)
   status OrderStatus? @default(PENDING)
 
+  receiptUrl String?
+
   customerName String?
 
   tableId Int?

@@ -105,6 +105,8 @@ export class OrderService {
       include: { orderItems: true },
     });
 
+    this.eventEmitter.emit('order.created', order.id);
+
     await this.prisma.order.update({
       where: { id: order.id },
       data: { slug: `o-${order.id.toString().padStart(5, '0')}` },
