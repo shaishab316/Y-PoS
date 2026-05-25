@@ -47,9 +47,9 @@ export const OrderQuerySchema = z.object({
 
 export const SubmitPaymentSchema = z.object({
   method: z.enum(PaymentMethod),
-  assignedToId: z.number().int().optional(),
-  cashReceived: z.number().optional(),
-  cashierId: z.number().int().optional(),
+  assignedToId: z.coerce.number().int().optional(),
+  cashReceived: z.coerce.number().optional(),
+  cashierId: z.coerce.number().int().optional(),
 });
 
 export const PaginationQuerySchema = z.object({

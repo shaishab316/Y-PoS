@@ -4,14 +4,8 @@ import z from 'zod';
 
 export const CreatePricingAdjustmentSchema = z.object({
   level: z.string().max(255).optional(),
-  percentage: z
-    .union([z.number(), z.string()])
-    .transform((val) => (typeof val === 'string' ? parseFloat(val) : val))
-    .optional(),
-  fixedAmount: z
-    .union([z.number(), z.string()])
-    .transform((val) => (typeof val === 'string' ? parseFloat(val) : val))
-    .optional(),
+  percentage: z.coerce.number().optional(),
+  fixedAmount: z.coerce.number().optional(),
   type: z.enum(PricingAdjustmentType).optional(),
 });
 

@@ -100,22 +100,11 @@ export class UserService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          role: true,
-          email: true,
-          phone: true,
-          photoUrl: true,
-          address: true,
-          facebookUrl: true,
-          instagramUrl: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-
+        include: {
           productionStation: true,
+        },
+        omit: {
+          passwordHash: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -158,22 +147,11 @@ export class UserService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          role: true,
-          email: true,
-          phone: true,
-          photoUrl: true,
-          address: true,
-          facebookUrl: true,
-          instagramUrl: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-
+        include: {
           productionStation: true,
+        },
+        omit: {
+          passwordHash: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -184,22 +162,11 @@ export class UserService {
   async getUserById(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        role: true,
-        email: true,
-        phone: true,
-        photoUrl: true,
-        address: true,
-        facebookUrl: true,
-        instagramUrl: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-
+      include: {
         productionStation: true,
+      },
+      omit: {
+        passwordHash: true,
       },
     });
 
@@ -226,33 +193,12 @@ export class UserService {
 
     return this.prisma.user.update({
       where: { id },
-      data: {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        role: data.role,
-        photoUrl: data.photoUrl,
-        address: data.address,
-        facebookUrl: data.facebookUrl,
-        instagramUrl: data.instagramUrl,
-        productionStationId: data.productionStationId,
-      },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        role: true,
-        email: true,
-        phone: true,
-        photoUrl: true,
-        address: true,
-        facebookUrl: true,
-        instagramUrl: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-
+      data,
+      include: {
         productionStation: true,
+      },
+      omit: {
+        passwordHash: true,
       },
     });
   }
