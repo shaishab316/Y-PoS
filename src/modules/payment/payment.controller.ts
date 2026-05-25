@@ -1,13 +1,17 @@
 import {
   Controller,
   Get,
+  Post,
   Query,
   Param,
+  Body,
   ParseIntPipe,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { PaymentQueryDto } from './payment.dto';
+import { PaymentQueryDto, VerifyPaymentDto } from './payment.dto';
 import type { ApiResponse } from '@/common/types/api-response';
 
 @Controller('payments')
@@ -44,6 +48,29 @@ export class PaymentController {
 
     return {
       success: true,
+      data,
+    };
+  }
+
+  @Post(':id/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: VerifyPaymentDto,
+  ): Promise<ApiResponse> {
+    const data = await this.paymentService.verifyPayment(
+      id,
+      body.verifiedById,
+      body.cashReceived,
+    );
+
+    if (!data) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return {
+      success: true,
+      message: 'Payment verified successfully',
       data,
     };
   }

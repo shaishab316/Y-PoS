@@ -21,6 +21,18 @@ model Payment {
 
   paidAt DateTime?
 
+  isVerified Boolean? @default(false)
+
+  verifiedAt DateTime?
+
+  verifiedById Int?
+  verifiedBy   User? @relation("PaymentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  cashierId Int?
+  cashier   User? @relation("PaymentCashier", fields: [cashierId], references: [id], onDelete: SetNull)
+
+  markAsMissMatch Boolean? @default(false)
+
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 

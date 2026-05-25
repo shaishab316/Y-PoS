@@ -59,6 +59,28 @@ export class PaymentService {
               id: true,
               slug: true,
               customerName: true,
+              type: true,
+              totalAmount: true,
+              orderItems: {
+                select: {
+                  id: true,
+                  itemName: true,
+                  quantity: true,
+                  unitPrice: true,
+                },
+              },
+            },
+          },
+          verifiedBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          cashier: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
@@ -86,6 +108,18 @@ export class PaymentService {
                 unitPrice: true,
               },
             },
+          },
+        },
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        cashier: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -168,6 +202,93 @@ export class PaymentService {
     return {
       todayEarning,
       todayGrowthRate: Math.round(todayGrowthRate * 100) / 100, // Round to 2 decimal places
+    };
+  }
+
+  async verifyPayment(
+    paymentId: number,
+    verifiedById: number,
+    cashReceived: number,
+  ) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      return null;
+    }
+
+    // Check if cashReceived is less than totalAmount
+    const totalAmount = Number(payment.totalAmount) || 0;
+    const isMismatch = cashReceived < totalAmount;
+
+    const updatedPayment = await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        isVerified: true,
+        verifiedAt: new Date(),
+        verifiedById,
+        markAsMissMatch: isMismatch,
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            slug: true,
+            customerName: true,
+            type: true,
+            totalAmount: true,
+            orderItems: {
+              select: {
+                id: true,
+                itemName: true,
+                quantity: true,
+                unitPrice: true,
+              },
+            },
+          },
+        },
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: updatedPayment.id,
+      slug: updatedPayment.slug,
+      orderId: updatedPayment.orderId,
+      method: updatedPayment.method || 'CASH',
+      status: updatedPayment.status || 'PENDING',
+      subtotal: Number(updatedPayment.subtotal) || 0,
+      chargesTotal: Number(updatedPayment.chargesTotal) || 0,
+      totalAmount: Number(updatedPayment.totalAmount) || 0,
+      cashReceived: updatedPayment.cashReceived
+        ? Number(updatedPayment.cashReceived)
+        : null,
+      changeAmount: updatedPayment.changeAmount
+        ? Number(updatedPayment.changeAmount)
+        : null,
+      proofImages: updatedPayment.proofImages || [],
+      isVerified: updatedPayment.isVerified,
+      markAsMissMatch: updatedPayment.markAsMissMatch,
+      verifiedAt: updatedPayment.verifiedAt
+        ? updatedPayment.verifiedAt.toISOString()
+        : null,
+      paidAt: updatedPayment.paidAt
+        ? updatedPayment.paidAt.toISOString()
+        : null,
+      createdAt: updatedPayment.createdAt
+        ? updatedPayment.createdAt.toISOString()
+        : null,
+      updatedAt: updatedPayment.updatedAt
+        ? updatedPayment.updatedAt.toISOString()
+        : null,
+      order: updatedPayment.order,
+      verifiedBy: updatedPayment.verifiedBy,
     };
   }
 }

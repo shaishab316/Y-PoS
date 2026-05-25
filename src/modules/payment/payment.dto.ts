@@ -15,5 +15,11 @@ export const PaymentQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+export const VerifyPaymentSchema = z.object({
+  verifiedById: z.coerce.number().int().min(1),
+  cashReceived: z.coerce.number().min(0),
+});
+
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
 export class PaymentQueryDto extends createZodDto(PaymentQuerySchema) {}
+export class VerifyPaymentDto extends createZodDto(VerifyPaymentSchema) {}
