@@ -326,7 +326,7 @@ export class ReportingService {
     });
 
     const mostPopularByStation = await Promise.all(
-      allStations.slice(0, 2).map(async (station) => {
+      allStations.map(async (station) => {
         const items = await this.prisma.$queryRaw<
           Array<{
             itemId: number;
@@ -393,15 +393,13 @@ export class ReportingService {
       LIMIT 10
     `;
 
-    // Get detailed report
-    const detailedOrders = await this.prisma.$queryRaw<
+    // Get detailed report with dynamic station times
+    const detailedOrdersRaw = await this.prisma.$queryRaw<
       Array<{
         orderId: number;
         slug: string;
         createdAt: Date;
         totalItems: bigint;
-        production1Time: string;
-        production2Time: string;
         collectionTime: string;
         deliveryTime: string;
         waitTime: string;
@@ -412,16 +410,6 @@ export class ReportingService {
         o.slug,
         o."createdAt",
         COUNT(DISTINCT oi.id)::bigint as "totalItems",
-        (SELECT AVG(EXTRACT(EPOCH FROM (oi2."readyAt" - o."createdAt")))::numeric
-         FROM order_items oi2 
-         WHERE oi2."orderId" = o.id 
-         AND oi2."productionStationId" = 1
-         AND oi2."readyAt" IS NOT NULL)::text as "production1Time",
-        (SELECT AVG(EXTRACT(EPOCH FROM (oi3."readyAt" - o."createdAt")))::numeric
-         FROM order_items oi3 
-         WHERE oi3."orderId" = o.id 
-         AND oi3."productionStationId" = 2
-         AND oi3."readyAt" IS NOT NULL)::text as "production2Time",
         (SELECT EXTRACT(EPOCH FROM (MAX(oi4."pickedUpAt") - o."createdAt"))::text
          FROM order_items oi4 
          WHERE oi4."orderId" = o.id)::text as "collectionTime",
@@ -438,45 +426,109 @@ export class ReportingService {
       LIMIT 50
     `;
 
-    // Get summary metrics
-    const summaryData = await this.prisma.$queryRaw<
-      Array<{
-        totalOrders: bigint;
-        totalItems: bigint;
-        avgProd1Time: string;
-        avgProd2Time: string;
-        avgCollectionTime: string;
-        avgWaitTime: string;
-      }>
+    // Build detailed report with real station times
+    const detailedReport = await Promise.all(
+      detailedOrdersRaw.map(async (order) => {
+        const stationTimes: Record<string, string> = {};
+
+        for (const station of allStations) {
+          const timeData = await this.prisma.$queryRaw<
+            Array<{ stationTime: string }>
+          >`
+            SELECT AVG(EXTRACT(EPOCH FROM (oi."readyAt" - o."createdAt")))::numeric as "stationTime"
+            FROM order_items oi
+            JOIN orders o ON oi."orderId" = o.id
+            WHERE oi."orderId" = ${order.orderId}
+            AND oi."productionStationId" = ${station.id}
+            AND oi."readyAt" IS NOT NULL
+          `;
+
+          if (station.name) {
+            stationTimes[station.name] = this.formatSeconds(
+              timeData[0]?.stationTime
+                ? parseFloat(timeData[0].stationTime)
+                : 0,
+            );
+          }
+        }
+
+        return {
+          orderNumber: order.orderId,
+          orderSlug: order.slug || `o-${order.orderId}`,
+          orderTime: new Date(order.createdAt).toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }),
+          totalItems: Number(order.totalItems),
+          stationTimes,
+          collectionTime: this.formatSeconds(
+            order.collectionTime ? parseFloat(order.collectionTime) : 0,
+          ),
+          deliveryTime: this.formatSeconds(
+            order.deliveryTime ? parseFloat(order.deliveryTime) : 0,
+          ),
+          waitTime: this.formatSeconds(
+            order.waitTime ? parseFloat(order.waitTime) : 0,
+          ),
+        };
+      }),
+    );
+
+    // Get summary metrics by station
+    const summaryByStation: Record<string, string> = {};
+
+    for (const station of allStations) {
+      const summaryData = await this.prisma.$queryRaw<
+        Array<{ avgTime: string }>
+      >`
+        SELECT AVG(EXTRACT(EPOCH FROM (oi."readyAt" - o."createdAt")))::numeric as "avgTime"
+        FROM order_items oi
+        JOIN orders o ON oi."orderId" = o.id
+        WHERE oi."productionStationId" = ${station.id}
+        AND o."createdAt" >= ${startDate}
+        AND o."createdAt" <= ${endDate}
+        AND oi."readyAt" IS NOT NULL
+      `;
+
+      summaryByStation[`avg${station.name}Time`] = this.formatSeconds(
+        summaryData[0]?.avgTime ? parseFloat(summaryData[0].avgTime) : 0,
+      );
+    }
+
+    const collectionData = await this.prisma.$queryRaw<
+      Array<{ avgTime: string }>
+    >`
+      SELECT AVG(EXTRACT(EPOCH FROM (o."pickedUpAt" - o."createdAt")))::numeric as "avgTime"
+      FROM orders o
+      WHERE o."createdAt" >= ${startDate}
+      AND o."createdAt" <= ${endDate}
+      AND o."pickedUpAt" IS NOT NULL
+    `;
+
+    const totalOrdersData = await this.prisma.$queryRaw<
+      Array<{ totalOrders: bigint; totalItems: bigint }>
     >`
       SELECT 
         COUNT(DISTINCT o.id)::bigint as "totalOrders",
-        COUNT(oi.id)::bigint as "totalItems",
-        (SELECT AVG(EXTRACT(EPOCH FROM (oi2."readyAt" - o2."createdAt")))::numeric
-         FROM order_items oi2 
-         JOIN orders o2 ON oi2."orderId" = o2.id
-         WHERE oi2."productionStationId" = 1
-         AND o2."createdAt" >= ${startDate}
-         AND o2."createdAt" <= ${endDate}
-         AND oi2."readyAt" IS NOT NULL)::text as "avgProd1Time",
-        (SELECT AVG(EXTRACT(EPOCH FROM (oi3."readyAt" - o3."createdAt")))::numeric
-         FROM order_items oi3 
-         JOIN orders o3 ON oi3."orderId" = o3.id
-         WHERE oi3."productionStationId" = 2
-         AND o3."createdAt" >= ${startDate}
-         AND o3."createdAt" <= ${endDate}
-         AND oi3."readyAt" IS NOT NULL)::text as "avgProd2Time",
-        AVG(EXTRACT(EPOCH FROM (o."pickedUpAt" - o."createdAt")))::text as "avgCollectionTime",
-        AVG(EXTRACT(EPOCH FROM (o."pickedUpAt" - o."createdAt")))::text as "avgWaitTime"
+        COUNT(oi.id)::bigint as "totalItems"
       FROM orders o
       JOIN order_items oi ON o.id = oi."orderId"
-      WHERE 
-        o."createdAt" >= ${startDate}
-        AND o."createdAt" <= ${endDate}
-        AND o."pickedUpAt" IS NOT NULL
+      WHERE o."createdAt" >= ${startDate}
+      AND o."createdAt" <= ${endDate}
+      AND o."pickedUpAt" IS NOT NULL
     `;
 
-    const summary = summaryData[0] || {};
+    const summary = {
+      totalOrders: Number(totalOrdersData[0]?.totalOrders || 0),
+      totalItems: Number(totalOrdersData[0]?.totalItems || 0),
+      ...summaryByStation,
+      avgCollectionTime: this.formatSeconds(
+        collectionData[0]?.avgTime ? parseFloat(collectionData[0].avgTime) : 0,
+      ),
+      avgWaitTime: this.formatSeconds(avgWaitTime),
+    };
 
     return {
       period: {
@@ -484,8 +536,7 @@ export class ReportingService {
         endDate: endDate.toISOString(),
       },
       averageWaitTime: this.formatSeconds(avgWaitTime),
-      mostPopularItemsProduction1: mostPopularByStation[0]?.items || [],
-      mostPopularItemsProduction2: mostPopularByStation[1]?.items || [],
+      mostPopularByStation,
       longestPrepTimeItems: longestPrepTimeItems.map((item) => ({
         stationName: item.stationName || 'Unknown',
         itemName: item.itemName || 'Unknown',
@@ -493,48 +544,8 @@ export class ReportingService {
           item.avgPrepTime ? parseFloat(item.avgPrepTime) : 0,
         ),
       })),
-      detailedReport: detailedOrders.map((order) => ({
-        orderNumber: order.orderId,
-        orderSlug: order.slug || `o-${order.orderId}`,
-        orderTime: new Date(order.createdAt).toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }),
-        totalItems: Number(order.totalItems),
-        production1Time: this.formatSeconds(
-          order.production1Time ? parseFloat(order.production1Time) : 0,
-        ),
-        production2Time: this.formatSeconds(
-          order.production2Time ? parseFloat(order.production2Time) : 0,
-        ),
-        collectionTime: this.formatSeconds(
-          order.collectionTime ? parseFloat(order.collectionTime) : 0,
-        ),
-        deliveryTime: this.formatSeconds(
-          order.deliveryTime ? parseFloat(order.deliveryTime) : 0,
-        ),
-        waitTime: this.formatSeconds(
-          order.waitTime ? parseFloat(order.waitTime) : 0,
-        ),
-      })),
-      summary: {
-        totalOrders: Number(summary.totalOrders || 0),
-        totalItems: Number(summary.totalItems || 0),
-        avgProduction1Time: this.formatSeconds(
-          summary.avgProd1Time ? parseFloat(summary.avgProd1Time) : 0,
-        ),
-        avgProduction2Time: this.formatSeconds(
-          summary.avgProd2Time ? parseFloat(summary.avgProd2Time) : 0,
-        ),
-        avgCollectionTime: this.formatSeconds(
-          summary.avgCollectionTime ? parseFloat(summary.avgCollectionTime) : 0,
-        ),
-        avgWaitTime: this.formatSeconds(
-          summary.avgWaitTime ? parseFloat(summary.avgWaitTime) : 0,
-        ),
-      },
+      detailedReport,
+      summary,
     };
   }
 

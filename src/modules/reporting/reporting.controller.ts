@@ -41,31 +41,16 @@ export class ReportingController {
   ): Promise<ApiResponse> {
     const data = await this.reportingService.getEfficiencyReport(query);
 
-    if (!data.mostPopularItemsProduction1.length) {
-      data.mostPopularItemsProduction1.push({
-        id: 0,
-        itemName: 'Sample Item 1',
-        prepTime: '120',
-        totalOrders: 50,
-      });
-    }
-
-    if (!data.mostPopularItemsProduction2.length) {
-      data.mostPopularItemsProduction2.push({
-        id: 0,
-        itemName: 'Sample Item 1',
-        prepTime: '120',
-        totalOrders: 50,
-      });
-    }
-
-    if (!data.longestPrepTimeItems.length) {
-      data.longestPrepTimeItems.push({
-        itemName: 'Sample Item 1',
-        stationName: 'Sample Station',
-        prepTime: '300',
-      });
-    }
+    data.mostPopularByStation.map((station) => {
+      if (!station.items.length) {
+        station.items.push({
+          id: 0,
+          itemName: 'Sample item',
+          prepTime: '123',
+          totalOrders: 0,
+        });
+      }
+    });
 
     return {
       message: 'Efficiency report generated successfully',

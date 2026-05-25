@@ -27,6 +27,8 @@ model User {
   resetToken       String?   @unique
   resetTokenExpiry DateTime?
 
+  feedbackMsg String?
+
   // OTP fields
   otp       String?
   otpExpiry DateTime?

@@ -14,6 +14,7 @@ export const CreateUserSchema = z.object({
   facebookUrl: z.string().url().optional(),
   instagramUrl: z.string().url().optional(),
   productionStationId: z.number().int().optional(),
+  feedbackMsg: z.string().trim().max(500).optional(),
 });
 
 export const UpdateUserSchema = CreateUserSchema.omit({
