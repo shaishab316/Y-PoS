@@ -548,6 +548,7 @@ export class OrderService {
         method: dto.method,
         subtotal: order.subtotal,
         totalAmount: order.totalAmount,
+        cashReceived: dto.cashReceived,
         proofImages: dto.proofImages,
         status: PaymentStatus.PAID,
         paidAt: new Date(),
