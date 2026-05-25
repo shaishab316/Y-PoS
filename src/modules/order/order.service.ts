@@ -63,6 +63,30 @@ export class OrderService {
       };
     });
 
+    // Fetch all pricing adjustments from database
+    const pricingAdjustmentsFromDb =
+      await this.prisma.pricingAdjustment.findMany();
+
+    let totalAmount = subtotal;
+    const pricingAdjustmentsSnapshots = pricingAdjustmentsFromDb.map((adj) => ({
+      id: adj.id,
+      level: adj.level,
+      type: adj.type,
+      percentage: adj.percentage ? Number(adj.percentage) : null,
+      fixedAmount: adj.fixedAmount ? Number(adj.fixedAmount) : null,
+    }));
+
+    // Apply adjustments to calculate total amount
+    for (const adjustment of pricingAdjustmentsFromDb) {
+      if (adjustment.type === 'PERCENTAGE' && adjustment.percentage) {
+        const adjustmentAmount =
+          (subtotal * Number(adjustment.percentage)) / 100;
+        totalAmount += adjustmentAmount;
+      } else if (adjustment.type === 'FIXED_AMOUNT' && adjustment.fixedAmount) {
+        totalAmount += Number(adjustment.fixedAmount);
+      }
+    }
+
     const order = await this.prisma.order.create({
       data: {
         userId: dto.userId,
@@ -71,7 +95,11 @@ export class OrderService {
         tableId: dto.tableId,
         customerName: dto.customerName,
         subtotal,
-        totalAmount: subtotal,
+        totalAmount,
+        pricingAdjustments:
+          pricingAdjustmentsSnapshots.length > 0
+            ? pricingAdjustmentsSnapshots
+            : Prisma.JsonNull,
         orderItems: { create: orderItems },
       },
       include: { orderItems: true },

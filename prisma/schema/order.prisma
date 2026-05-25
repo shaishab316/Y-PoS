@@ -17,6 +17,9 @@ model Order {
   subtotal    Decimal? @default(0.00) @db.Decimal(10, 2)
   totalAmount Decimal? @default(0.00) @db.Decimal(10, 2)
 
+  // Pricing adjustment snapshots array
+  pricingAdjustments Json?
+
   userId Int?
   user   User? @relation("userOrders", fields: [userId], references: [id], onDelete: SetNull)
 
