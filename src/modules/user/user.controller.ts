@@ -111,6 +111,13 @@ export class UserController {
     };
   }
 
+  @Get('owner')
+  async getOwner() {
+    const data = await this.userService.getOwner();
+
+    return { message: 'Owner retrieved successfully', data };
+  }
+
   @Get(':id')
   @CacheKey('user::params.id')
   @CacheTTL(60 * 60)

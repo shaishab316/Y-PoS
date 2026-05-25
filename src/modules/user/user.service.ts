@@ -235,4 +235,22 @@ export class UserService {
       },
     });
   }
+
+  async getOwner() {
+    return await this.prisma.user.findFirst({
+      where: {
+        role: UserRole.OWNER,
+      },
+      omit: {
+        passwordHash: true,
+        otp: true,
+        otpExpiry: true,
+        role: true,
+        id: true,
+        slug: true,
+        resetToken: true,
+        resetTokenExpiry: true,
+      },
+    });
+  }
 }
