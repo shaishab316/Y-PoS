@@ -35,6 +35,7 @@ import { OperatingHoursModule } from './modules/operating-hours/operating-hours.
 import { ShiftModule } from './modules/shift/shift.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './infra/mail/mail.module';
+import { PricingAdjustmentModule } from './modules/pricing-adjustment/pricing-adjustment.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { MailModule } from './infra/mail/mail.module';
     OperatingHoursModule,
     ShiftModule,
     AuthModule,
+    PricingAdjustmentModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },

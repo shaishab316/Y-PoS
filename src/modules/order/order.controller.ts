@@ -85,6 +85,8 @@ export class OrderController {
 
     const data = await this.orderService.submitOrderPayment(id, payload);
 
+    await this.orderService.sendOrderToProduction(id);
+
     return { message: 'Payment submitted successfully', data };
   }
 
