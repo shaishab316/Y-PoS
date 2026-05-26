@@ -1,22 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { PaymentQueryDto } from './payment.dto';
+import { Prisma } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllPayments(query: PaymentQueryDto) {
-    const { page, limit, status, method, search } = query;
+    const { page, limit, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (status) {
-      where.status = status;
-    }
-    if (method) {
-      where.method = method;
-    }
+    const where: Prisma.PaymentWhereInput = {
+      isVerified: false,
+      createdAt: {
+        gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
+        lt: new Date(new Date().setHours(24, 0, 0, 0)), // Start of tomorrow
+      },
+    };
+    // if (status) {
+    //   where.status = status;
+    // }
+    // if (method) {
+    //   where.method = method;
+    // }
+
     if (search) {
       where.OR = [
         {
@@ -55,12 +64,7 @@ export class PaymentService {
         orderBy: { createdAt: 'desc' },
         include: {
           order: {
-            select: {
-              id: true,
-              slug: true,
-              customerName: true,
-              type: true,
-              totalAmount: true,
+            include: {
               orderItems: {
                 select: {
                   id: true,
@@ -94,12 +98,7 @@ export class PaymentService {
       where: { id },
       include: {
         order: {
-          select: {
-            id: true,
-            slug: true,
-            customerName: true,
-            type: true,
-            totalAmount: true,
+          include: {
             orderItems: {
               select: {
                 id: true,
@@ -290,5 +289,125 @@ export class PaymentService {
       order: updatedPayment.order,
       verifiedBy: updatedPayment.verifiedBy,
     };
+  }
+
+  async getTodayPayments() {
+    return await this.prisma.payment.findMany({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
+          lt: new Date(new Date().setHours(24, 0, 0, 0)), // Start of tomorrow
+        },
+      },
+      include: {
+        order: {
+          include: {
+            orderItems: {
+              include: {
+                productionStation: true,
+              },
+            },
+            table: true,
+          },
+        },
+        cashier: {
+          omit: {
+            passwordHash: true,
+          },
+        },
+        verifiedBy: {
+          omit: {
+            passwordHash: true,
+          },
+        },
+      },
+    });
+  }
+
+  async exportTodayPaymentsToExcel() {
+    const payments = await this.getTodayPayments();
+
+    // Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Today Payments');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'Payment ID', key: 'id', width: 10 },
+      { header: 'Slug', key: 'slug', width: 15 },
+      { header: 'Order ID', key: 'orderId', width: 10 },
+      { header: 'Customer Name', key: 'customerName', width: 20 },
+      { header: 'Payment Method', key: 'method', width: 12 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Subtotal', key: 'subtotal', width: 12 },
+      { header: 'Charges Total', key: 'chargesTotal', width: 12 },
+      { header: 'Total Amount', key: 'totalAmount', width: 12 },
+      { header: 'Cash Received', key: 'cashReceived', width: 12 },
+      { header: 'Change Amount', key: 'changeAmount', width: 12 },
+      { header: 'Items', key: 'items', width: 30 },
+      { header: 'Table Number', key: 'tableNumber', width: 12 },
+      { header: 'Cashier Name', key: 'cashierName', width: 15 },
+      { header: 'Verified By', key: 'verifiedByName', width: 15 },
+      { header: 'Is Verified', key: 'isVerified', width: 12 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+      { header: 'Paid At', key: 'paidAt', width: 20 },
+    ];
+
+    // Add data rows
+    payments.forEach((payment) => {
+      const itemNames = payment.order?.orderItems
+        ?.map((item) => `${item.itemName} (x${item.quantity})`)
+        .join(', ');
+
+      worksheet.addRow({
+        id: payment.id,
+        slug: payment.slug,
+        orderId: payment.orderId,
+        customerName: payment.order?.customerName || 'N/A',
+        method: payment.method || 'CASH',
+        status: payment.status || 'PENDING',
+        subtotal: Number(payment.subtotal) || 0,
+        chargesTotal: Number(payment.chargesTotal) || 0,
+        totalAmount: Number(payment.totalAmount) || 0,
+        cashReceived: payment.cashReceived
+          ? Number(payment.cashReceived)
+          : 'N/A',
+        changeAmount: payment.changeAmount
+          ? Number(payment.changeAmount)
+          : 'N/A',
+        items: itemNames || 'N/A',
+        tableNumber: payment.order?.table?.tableNumber || 'N/A',
+        cashierName: payment.cashier?.name || 'N/A',
+        verifiedByName: payment.verifiedBy?.name || 'N/A',
+        isVerified: payment.isVerified ? 'Yes' : 'No',
+        createdAt: payment.createdAt
+          ? new Date(payment.createdAt).toLocaleString()
+          : 'N/A',
+        paidAt: payment.paidAt
+          ? new Date(payment.paidAt).toLocaleString()
+          : 'N/A',
+      });
+    });
+
+    // Style the header row
+    worksheet.getRow(1).font = {
+      bold: true,
+      color: { argb: 'FFFFFFFF' },
+    };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF000000' },
+    };
+    worksheet.getRow(1).alignment = { horizontal: 'center' };
+
+    // Auto-fit columns based on content
+    worksheet.columns.forEach((column) => {
+      column.width = Math.min(column.width || 15, 50);
+    });
+
+    // Generate buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
   }
 }

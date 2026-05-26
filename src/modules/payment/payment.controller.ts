@@ -9,6 +9,7 @@ import {
   NotFoundException,
   HttpCode,
   HttpStatus,
+  Response,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PaymentQueryDto, VerifyPaymentDto } from './payment.dto';
@@ -34,6 +35,21 @@ export class PaymentController {
       },
       meta,
     };
+  }
+
+  @Get('export/today')
+  async exportTodayPayments(@Response() res: any) {
+    const buffer = await this.paymentService.exportTodayPaymentsToExcel();
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="today-payments-${new Date().toISOString().split('T')[0]}.xlsx"`,
+    );
+    res.send(buffer);
   }
 
   @Get(':id')

@@ -45,7 +45,7 @@ export class ReceiptService {
       }
 
       // Get restaurant info (owner)
-      const owner = await this.userService.getOwner();
+      const owner = await this.userService.getBusinessProfile();
       if (!owner) {
         throw new Error('Restaurant owner information not found');
       }
@@ -98,13 +98,11 @@ export class ReceiptService {
           pricingAdjustments.length > 0 ? pricingAdjustments : undefined,
         totalAmount: Number(order.totalAmount || 0),
         paymentMethod: order.payment?.[0]?.method || 'Not specified',
-        restaurantName: owner.name || 'Common Space',
-        restaurantPhone: owner.phone || '+62 812-3456-7890',
-        restaurantEmail: owner.email || 'info@commonspace.id',
-        restaurantAddress: owner.address || 'Jl. Sudirman No. 22, Jakarta',
-        restaurantLogoUrl:
-          owner.photoUrl ||
-          'https://res.cloudinary.com/dzcmadjlq/image/upload/v1700000000/common-space/logo-placeholder.png',
+        restaurantName: owner.name || '',
+        restaurantPhone: owner.contact || '',
+        restaurantEmail: owner.email || '',
+        restaurantAddress: owner.address || '',
+        restaurantLogoUrl: owner.logoUrl || '',
       };
 
       // Generate PDF

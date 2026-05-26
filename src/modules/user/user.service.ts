@@ -10,6 +10,7 @@ import {
   ChangePasswordDto,
   UserQueryDto,
   UserForShiftQueryDto,
+  UpdateBusinessDto,
 } from './user.dto';
 import { hashPassword } from '@/common/helpers/hash.helper';
 import { Prisma, UserRole } from '@prisma/client';
@@ -252,5 +253,39 @@ export class UserService {
         resetTokenExpiry: true,
       },
     });
+  }
+
+  async updateBusiness(data: UpdateBusinessDto & { logoUrl: string }) {
+    let profile = await this.prisma.businessProfile.findFirst();
+
+    if (!profile) {
+      profile = await this.prisma.businessProfile.create({
+        data: {
+          address: data.businessAddress,
+          contact: data.businessPhone,
+          email: data.businessEmail,
+          name: data.businessName,
+          logoUrl: data.logoUrl,
+          customNote: data.feedbackMsg,
+        },
+      });
+      return profile;
+    }
+
+    return await this.prisma.businessProfile.update({
+      where: { id: profile.id },
+      data: {
+        address: data.businessAddress,
+        contact: data.businessPhone,
+        email: data.businessEmail,
+        name: data.businessName,
+        logoUrl: data.logoUrl,
+        customNote: data.feedbackMsg,
+      },
+    });
+  }
+
+  async getBusinessProfile() {
+    return await this.prisma.businessProfile.findFirst();
   }
 }

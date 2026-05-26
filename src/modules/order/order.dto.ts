@@ -49,6 +49,7 @@ export const SubmitPaymentSchema = z.object({
   method: z.enum(PaymentMethod),
   assignedToId: z.coerce.number().int().optional(),
   cashReceived: z.coerce.number().optional(),
+  changeAmount: z.coerce.number().optional(),
   cashierId: z.coerce.number().int().optional(),
 });
 

@@ -21,6 +21,19 @@ export const UpdateUserSchema = CreateUserSchema.omit({
   password: true,
 }).partial();
 
+export const BusinessSchema = z.object({
+  businessEmail: z.string().email().optional(),
+  businessName: z.string().max(255).optional(),
+  businessAddress: z.string().max(255).optional(),
+  businessPhone: _.phoneNumber().optional(),
+  feedbackMsg: z.string().max(500).optional(),
+});
+
+export const UpdateBusinessSchema = BusinessSchema.partial();
+
+export class CreateBusinessDto extends createZodDto(BusinessSchema) {}
+export class UpdateBusinessDto extends createZodDto(UpdateBusinessSchema) {}
+
 export const ChangePasswordSchema = z.object({
   password: _.password({ level: 'weak' }),
 });

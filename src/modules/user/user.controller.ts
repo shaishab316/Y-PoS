@@ -20,6 +20,7 @@ import {
   ChangePasswordDto,
   UserQueryDto,
   UserForShiftQueryDto,
+  UpdateBusinessDto,
 } from './user.dto';
 import {
   CacheKey,
@@ -35,6 +36,17 @@ const PhotoUploadInterceptor = createFileUploadInterceptor({
   fields: [
     {
       name: 'photo',
+      maxCount: 1,
+      maxFileSize: 5 * 1024 * 1024,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    },
+  ],
+});
+
+const LogoUploadInterceptor = createFileUploadInterceptor({
+  fields: [
+    {
+      name: 'logo',
       maxCount: 1,
       maxFileSize: 5 * 1024 * 1024,
       allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -111,11 +123,52 @@ export class UserController {
     };
   }
 
+  @Patch('business')
+  @UseInterceptors(LogoUploadInterceptor, ParseJsonBodyInterceptor)
+  async updateBusiness(
+    @Body() body: UpdateBusinessDto,
+    @UploadedFiles() files: { logo?: Express.Multer.File[] },
+  ) {
+    const businessData: any = { ...body };
+
+    if (files?.logo?.[0]) {
+      const uploaded = await this.cloudinary.uploadFile({
+        file: files.logo[0],
+        folder: 'business-logos',
+        resourceType: 'image',
+      });
+      businessData.logoUrl = uploaded.url;
+    }
+
+    const data = await this.userService.updateBusiness(businessData);
+
+    return { message: 'Business updated successfully', data };
+  }
+
+  @Get('business')
+  async getBusinessProfile() {
+    const data = await this.userService.getBusinessProfile();
+
+    return {
+      message: 'Business profile retrieved successfully',
+      data: {
+        ...data,
+        feedbackMsg: data?.customNote,
+      },
+    };
+  }
+
   @Get('owner')
   async getOwner() {
     const data = await this.userService.getOwner();
 
-    return { message: 'Owner retrieved successfully', data };
+    return {
+      message: 'Owner retrieved successfully',
+      data: {
+        ...data,
+        email: data?.businessEmail ?? data?.email,
+      },
+    };
   }
 
   @Get(':id')
