@@ -10,14 +10,37 @@ import {
   HttpCode,
   HttpStatus,
   Response,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { PaymentQueryDto, VerifyPaymentDto } from './payment.dto';
+import {
+  PaymentQueryDto,
+  VerifyPaymentDto,
+  TodayPaymentVerifyDto,
+} from './payment.dto';
 import type { ApiResponse } from '@/common/types/api-response';
+import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
+import { CloudinaryService } from '@/infra/upload/cloudinary.service';
+import { ParseJsonBodyInterceptor } from '@/common/interceptors/parse-json-body.interceptor';
+
+const ProofImagesUploadInterceptor = createFileUploadInterceptor({
+  fields: [
+    {
+      name: 'proofImages',
+      maxCount: 5,
+      maxFileSize: 15 * 1024 * 1024, // 15 MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    },
+  ],
+});
 
 @Controller('payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   @Get()
   async getAllPayments(@Query() query: PaymentQueryDto): Promise<ApiResponse> {
@@ -68,6 +91,42 @@ export class PaymentController {
     };
   }
 
+  @Post('today/verify')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(ProofImagesUploadInterceptor, ParseJsonBodyInterceptor)
+  async todayPaymentVerify(
+    @Body() body: TodayPaymentVerifyDto,
+    @UploadedFiles() files: { proofImages?: Express.Multer.File[] },
+  ): Promise<ApiResponse> {
+    let proofImageUrls: string[] = [];
+
+    if (files?.proofImages?.length) {
+      const uploaded = await this.cloudinary.uploadFiles(
+        files.proofImages,
+        'payment-verify',
+        'image',
+      );
+      proofImageUrls = uploaded.map((u) => u.url);
+    }
+
+    console.log('Proof image URLs:', proofImageUrls);
+    console.log('Request body:', body);
+
+    const data = await this.paymentService.createTodayPaymentVerify(
+      body.totalAmount,
+      body.actualAmount,
+      body.remark || null,
+      proofImageUrls,
+      body.verifiedById,
+    );
+
+    return {
+      success: true,
+      message: 'Payment verification record created successfully',
+      data,
+    };
+  }
+
   @Post(':id/verify')
   @HttpCode(HttpStatus.OK)
   async verifyPayment(
@@ -87,6 +146,16 @@ export class PaymentController {
     return {
       success: true,
       message: 'Payment verified successfully',
+      data,
+    };
+  }
+
+  @Get('today/summary')
+  async getTodayPayments(): Promise<ApiResponse> {
+    const data = await this.paymentService.getTodayPaymentsSummary();
+
+    return {
+      success: true,
       data,
     };
   }

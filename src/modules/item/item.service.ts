@@ -7,25 +7,26 @@ import {
   ItemQueryDto,
   UpdatePacketSectionChoiceDto,
   UpdatePacketSectionDto,
+  CreateItemDto,
 } from './item.dto';
 
 @Injectable()
 export class ItemService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createItem(data: Prisma.ItemCreateArgs['data']) {
+  async createItem(data: CreateItemDto & { imageUrl: string }) {
     const item = await this.prisma.item.create({ data });
 
     const updatedItem = await this.prisma.item.update({
       where: { id: item.id },
       data: {
-        slug: `i-${item.id.toString().padStart(5, '0')}`,
+        slug: data.slug ?? `i-${item.id.toString().padStart(5, '0')}`,
         sortOrder: data?.sortOrder ?? item.id,
       },
     });
 
     // Create initial inventory log if inventoryQty is provided and greater than 0
-    if (data!.inventoryQty && data!.inventoryQty > 0) {
+    if (data.inventoryQty && data.inventoryQty > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -35,9 +36,9 @@ export class ItemService {
           itemName: item.name,
           date: today,
           openingStock: 0,
-          stockIn: data!.inventoryQty,
+          stockIn: data.inventoryQty,
           stockOut: 0,
-          closingStock: data!.inventoryQty,
+          closingStock: data.inventoryQty,
           remarks: 'Initial stock',
         },
       });

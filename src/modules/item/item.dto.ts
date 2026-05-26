@@ -5,6 +5,7 @@ import z from 'zod';
 
 export const CreateItemSchema = z.object({
   name: _.name({ field: 'Item name' }),
+  slug: _.name({ field: 'Item id' }).optional(),
   itemType: z.enum(ItemType).default(ItemType.INDIVIDUAL),
   price: z.number().int().min(0).optional().default(0),
   productionStationId: z.number().int().optional(),

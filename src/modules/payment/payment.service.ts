@@ -410,4 +410,83 @@ export class PaymentService {
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer;
   }
+
+  async getTodayPaymentsSummary() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get total amount of today's payments
+    const payments = await this.prisma.payment.aggregate({
+      where: {
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    });
+
+    const totalAmount = Number(payments._sum.totalAmount) || 0;
+
+    // Get count of already submitted payment verifications for today
+    // Using raw query to properly handle date comparison
+    const alreadyVerifiedCount = await this.prisma.paymentVerify.count({
+      where: {
+        verifiedAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    });
+
+    return {
+      totalAmount,
+      alreadyVerified: alreadyVerifiedCount,
+    };
+  }
+
+  async createTodayPaymentVerify(
+    totalAmount: number,
+    actualAmount: number,
+    remark: string | null,
+    proofImages: string[],
+    verifiedById: number,
+  ) {
+    const paymentVerify = await this.prisma.paymentVerify.create({
+      data: {
+        date: new Date(),
+        totalAmount,
+        actualAmount,
+        remark,
+        proofImages,
+        verifiedById,
+      },
+      include: {
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: paymentVerify.id,
+      date: paymentVerify.date ? paymentVerify.date.toISOString() : null,
+      totalAmount: Number(paymentVerify.totalAmount) || 0,
+      actualAmount: Number(paymentVerify.actualAmount) || 0,
+      remark: paymentVerify.remark,
+      proofImages: paymentVerify.proofImages || [],
+      verifiedAt: paymentVerify.verifiedAt
+        ? paymentVerify.verifiedAt.toISOString()
+        : null,
+      verifiedBy: paymentVerify.verifiedBy,
+    };
+  }
 }

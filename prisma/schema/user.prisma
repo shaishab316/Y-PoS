@@ -55,5 +55,7 @@ model User {
   paymentVerifies Payment[] @relation("PaymentVerifier")
   paymentCashiers Payment[] @relation("PaymentCashier")
 
+  paymentVerifiesByDate PaymentVerify[] @relation("PaymentVerifyVerifier")
+
   @@map("users")
 }

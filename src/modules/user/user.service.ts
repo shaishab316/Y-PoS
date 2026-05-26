@@ -94,6 +94,10 @@ export class UserService {
 
     if (role) {
       where.role = role;
+    } else {
+      where.role = {
+        not: UserRole.USER,
+      };
     }
 
     return Promise.all([
