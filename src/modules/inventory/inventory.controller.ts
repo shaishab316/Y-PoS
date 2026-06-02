@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Response } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import {
   InventoryQueryDto,
@@ -30,6 +30,30 @@ export class InventoryController {
   })
   async getInventoryLogs(@Query() query: InventoryQueryDto) {
     return await this.inventoryService.getInventoryLogs(query);
+  }
+
+  @Get('logs-export')
+  @ApiOperation({
+    summary: 'Export inventory logs to Excel',
+    description:
+      'Download inventory transaction logs as Excel file with optional date filtering',
+  })
+  async exportInventoryLogs(
+    @Query() query: InventoryQueryDto,
+    @Response() res: any,
+  ) {
+    const buffer =
+      await this.inventoryService.exportInventoryLogsToExcel(query);
+
+    // Set response headers for file download
+    res.set({
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="inventory-logs-${new Date().getTime()}.xlsx"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.send(buffer);
   }
 
   @Post('stock-in')

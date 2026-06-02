@@ -6,6 +6,7 @@ import {
   StockOutDto,
   ReportQueryDto,
 } from './inventory.dto';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class InventoryService {
@@ -122,6 +123,7 @@ export class InventoryService {
       where: { id: itemId },
       data: {
         inventoryQty: closingStock,
+        slug: item.slug || itemId.toString(),
       },
     });
 
@@ -184,6 +186,7 @@ export class InventoryService {
       where: { id: itemId },
       data: {
         inventoryQty: closingStock,
+        slug: item.slug || itemId.toString(),
       },
     });
 
@@ -245,6 +248,97 @@ export class InventoryService {
     }
 
     return report;
+  }
+
+  async exportInventoryLogsToExcel(
+    query: InventoryQueryDto,
+  ): Promise<Uint8Array> {
+    const { startDate, endDate } = query;
+
+    const where: any = {};
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.date.lte = new Date(endDate);
+      }
+    }
+
+    const logs = await this.prisma.inventoryLog.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Inventory Logs');
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 15 },
+      { header: 'Item Name', key: 'itemName', width: 25 },
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Opening Stock', key: 'openingStock', width: 15 },
+      { header: 'Stock In', key: 'stockIn', width: 12 },
+      { header: 'Stock Out', key: 'stockOut', width: 12 },
+      { header: 'Stock Sold', key: 'stockSold', width: 12 },
+      { header: 'Closing Stock', key: 'closingStock', width: 15 },
+      { header: 'Remarks', key: 'remarks', width: 30 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF366092' },
+    };
+
+    // Add data rows
+    logs.forEach((log) => {
+      worksheet.addRow({
+        id: log.slug ?? log.id,
+        itemName: log.itemName,
+        date: log.date ? new Date(log.date).toLocaleDateString() : '',
+        openingStock: log.openingStock ?? 0,
+        stockIn: log.stockIn ?? 0,
+        stockOut: log.stockOut ?? 0,
+        stockSold: log.stockSold ?? 0,
+        closingStock: log.closingStock ?? 0,
+        remarks: log.remarks ?? '',
+        createdAt: log.createdAt
+          ? new Date(log.createdAt).toLocaleString()
+          : '',
+      });
+    });
+
+    // Add summary section
+    const lastRow = worksheet.lastRow?.number ?? 1;
+    const summaryRow = lastRow + 2;
+
+    worksheet.getCell(`A${summaryRow}`).value = 'SUMMARY';
+    worksheet.getCell(`A${summaryRow}`).font = { bold: true, size: 12 };
+
+    const totalStockIn = logs.reduce((sum, log) => sum + (log.stockIn ?? 0), 0);
+    const totalStockOut = logs.reduce(
+      (sum, log) => sum + (log.stockOut ?? 0),
+      0,
+    );
+    const totalSold = logs.reduce((sum, log) => sum + (log.stockSold ?? 0), 0);
+
+    worksheet.getCell(`A${summaryRow + 1}`).value = 'Total Stock In:';
+    worksheet.getCell(`B${summaryRow + 1}`).value = totalStockIn;
+    worksheet.getCell(`A${summaryRow + 2}`).value = 'Total Stock Out:';
+    worksheet.getCell(`B${summaryRow + 2}`).value = totalStockOut;
+    worksheet.getCell(`A${summaryRow + 3}`).value = 'Total Sold:';
+    worksheet.getCell(`B${summaryRow + 3}`).value = totalSold;
+
+    // Generate buffer
+    return (await workbook.xlsx.writeBuffer()) as unknown as Uint8Array;
   }
 
   private calculateSummary(logs: any[]) {

@@ -408,14 +408,38 @@ export class OrderService {
     });
   }
 
-  async getPendingPaymentOrders(pagination: PaginationQueryDto) {
-    const where = {
-      payment: {
-        none: {
-          status: PaymentStatus.PAID,
-        },
+  async getPaymentOrders(
+    pagination: PaginationQueryDto,
+    isPaid: boolean | undefined = undefined,
+  ) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today: 00:00:00.000
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow: 00:00:00.000
+
+    const where: Prisma.OrderWhereInput = {
+      createdAt: {
+        gte: today, // >= start of today
+        lt: tomorrow, // < start of tomorrow
       },
     };
+
+    if (isPaid !== undefined) {
+      if (isPaid) {
+        where.payment = {
+          some: {
+            status: PaymentStatus.PAID,
+          },
+        };
+      } else {
+        where.payment = {
+          none: {
+            status: PaymentStatus.PAID,
+          },
+        };
+      }
+    }
 
     return Promise.all([
       this.prisma.order.findMany({

@@ -154,8 +154,30 @@ export class OrderController {
   async getPendingPaymentOrders(
     @Query() query: PaginationQueryDto,
   ): Promise<ApiResponse> {
-    const [data, total] =
-      await this.orderService.getPendingPaymentOrders(query);
+    const [data, total] = await this.orderService.getPaymentOrders(
+      query,
+      false,
+    );
+
+    return {
+      message: 'Pending payment orders retrieved successfully',
+      data,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
+    };
+  }
+
+  @Get('paid-payment')
+  @CacheKey('order:paid-payment')
+  @CacheTTL(30)
+  async getPaidPaymentOrders(
+    @Query() query: PaginationQueryDto,
+  ): Promise<ApiResponse> {
+    const [data, total] = await this.orderService.getPaymentOrders(query, true);
 
     return {
       message: 'Pending payment orders retrieved successfully',
