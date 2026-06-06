@@ -7,8 +7,9 @@ model ProductionStation {
   sortOrder Int?
   isActive  Boolean? @default(true)
 
-  items      Item[]
-  orderItems OrderItem[]
+  items          Item[]
+  orderItems     OrderItem[]
+  packetSections PacketSection[]
 
   users User[]
 

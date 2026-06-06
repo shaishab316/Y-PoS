@@ -37,6 +37,7 @@ export const CreatePacketSectionSchema = z.object({
   name: z.string().min(1).max(100),
   maxQty: z.number().int().min(1).optional().default(1),
   sortOrder: z.number().int().optional(),
+  productionStationId: z.number().int().optional(),
 });
 
 export const UpdatePacketSectionSchema = CreatePacketSectionSchema.partial();

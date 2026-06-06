@@ -43,6 +43,9 @@ model PacketSection {
   itemId Int?
   item   Item? @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
+  productionStationId Int?
+  productionStation   ProductionStation? @relation(fields: [productionStationId], references: [id], onDelete: Cascade)
+
   name      String?
   maxQty    Int?    @default(1)
   sortOrder Int?
