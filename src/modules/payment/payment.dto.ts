@@ -1,4 +1,8 @@
-import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import {
+  PaymentMethod,
+  PaymentStatus,
+  PaymentVerificationStatus,
+} from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
@@ -27,9 +31,17 @@ export const TodayPaymentVerifySchema = z.object({
   verifiedById: z.coerce.number().int().min(1),
 });
 
+export const UpdatePaymentVerificationStatusSchema = z.object({
+  status: z.enum(PaymentVerificationStatus),
+  verifiedById: z.coerce.number().int().min(1),
+});
+
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
 export class PaymentQueryDto extends createZodDto(PaymentQuerySchema) {}
 export class VerifyPaymentDto extends createZodDto(VerifyPaymentSchema) {}
 export class TodayPaymentVerifyDto extends createZodDto(
   TodayPaymentVerifySchema,
+) {}
+export class UpdatePaymentVerificationStatusDto extends createZodDto(
+  UpdatePaymentVerificationStatusSchema,
 ) {}

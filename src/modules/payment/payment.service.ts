@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { PaymentQueryDto } from './payment.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, PaymentVerificationStatus } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
@@ -13,7 +13,8 @@ export class PaymentService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.PaymentWhereInput = {
-      isVerified: false,
+      status: 'PAID',
+      verificationStatus: 'PENDING',
       createdAt: {
         gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
         lt: new Date(new Date().setHours(24, 0, 0, 0)), // Start of tomorrow
@@ -181,6 +182,7 @@ export class PaymentService {
           lt: today,
         },
         status: 'PAID',
+        verificationStatus: 'PENDING',
       },
       _sum: {
         totalAmount: true,
@@ -487,6 +489,94 @@ export class PaymentService {
         ? paymentVerify.verifiedAt.toISOString()
         : null,
       verifiedBy: paymentVerify.verifiedBy,
+    };
+  }
+
+  async updateVerificationStatus(
+    paymentId: number,
+    status: PaymentVerificationStatus,
+    verifiedById: number,
+  ) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      return null;
+    }
+
+    const isMismatch = status === 'MISMATCH';
+    const isVerified = status !== 'PENDING';
+
+    const updatedPayment = await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        verificationStatus: status,
+        isVerified,
+        verifiedAt: isVerified ? new Date() : null,
+        verifiedById: isVerified ? verifiedById : null,
+        markAsMissMatch: isMismatch,
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            slug: true,
+            customerName: true,
+            type: true,
+            totalAmount: true,
+            orderItems: {
+              select: {
+                id: true,
+                itemName: true,
+                quantity: true,
+                unitPrice: true,
+              },
+            },
+          },
+        },
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: updatedPayment.id,
+      slug: updatedPayment.slug,
+      orderId: updatedPayment.orderId,
+      method: updatedPayment.method || 'CASH',
+      status: updatedPayment.status || 'PENDING',
+      verificationStatus: updatedPayment.verificationStatus,
+      subtotal: Number(updatedPayment.subtotal) || 0,
+      chargesTotal: Number(updatedPayment.chargesTotal) || 0,
+      totalAmount: Number(updatedPayment.totalAmount) || 0,
+      cashReceived: updatedPayment.cashReceived
+        ? Number(updatedPayment.cashReceived)
+        : null,
+      changeAmount: updatedPayment.changeAmount
+        ? Number(updatedPayment.changeAmount)
+        : null,
+      proofImages: updatedPayment.proofImages || [],
+      isVerified: updatedPayment.isVerified,
+      markAsMissMatch: updatedPayment.markAsMissMatch,
+      verifiedAt: updatedPayment.verifiedAt
+        ? updatedPayment.verifiedAt.toISOString()
+        : null,
+      paidAt: updatedPayment.paidAt
+        ? updatedPayment.paidAt.toISOString()
+        : null,
+      createdAt: updatedPayment.createdAt
+        ? updatedPayment.createdAt.toISOString()
+        : null,
+      updatedAt: updatedPayment.updatedAt
+        ? updatedPayment.updatedAt.toISOString()
+        : null,
+      order: updatedPayment.order,
+      verifiedBy: updatedPayment.verifiedBy,
     };
   }
 }

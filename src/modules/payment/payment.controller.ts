@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Query,
   Param,
   Body,
@@ -18,6 +19,7 @@ import {
   PaymentQueryDto,
   VerifyPaymentDto,
   TodayPaymentVerifyDto,
+  UpdatePaymentVerificationStatusDto,
 } from './payment.dto';
 import type { ApiResponse } from '@/common/types/api-response';
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
@@ -146,6 +148,29 @@ export class PaymentController {
     return {
       success: true,
       message: 'Payment verified successfully',
+      data,
+    };
+  }
+
+  @Patch(':id/verification-status')
+  @HttpCode(HttpStatus.OK)
+  async updateVerificationStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdatePaymentVerificationStatusDto,
+  ): Promise<ApiResponse> {
+    const data = await this.paymentService.updateVerificationStatus(
+      id,
+      body.status,
+      body.verifiedById,
+    );
+
+    if (!data) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return {
+      success: true,
+      message: 'Payment verification status updated successfully',
       data,
     };
   }

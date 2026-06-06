@@ -23,6 +23,8 @@ model Payment {
 
   isVerified Boolean? @default(false)
 
+  verificationStatus PaymentVerificationStatus @default(PENDING)
+
   verifiedAt DateTime?
 
   verifiedById Int?
@@ -37,6 +39,12 @@ model Payment {
   updatedAt DateTime? @updatedAt
 
   @@map("payments")
+}
+
+enum PaymentVerificationStatus {
+  PENDING
+  MATCH
+  MISMATCH
 }
 
 model PaymentVerify {

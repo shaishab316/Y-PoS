@@ -604,6 +604,7 @@ export class OrderService {
         totalAmount: order.totalAmount,
         cashReceived: dto.cashReceived,
         proofImages: dto.proofImages,
+        cashierId: dto.cashierId,
         status: PaymentStatus.PAID,
         paidAt: new Date(),
       },

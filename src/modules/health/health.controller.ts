@@ -25,23 +25,30 @@ export class HealthController {
   @Get()
   @SkipThrottle()
   @HealthCheck()
-  check() {
-    return this.health.check([
-      () => this.prismaHealth.isHealthy('database'),
-      async () => {
-        const indicator = this.healthIndicatorService.check('redis');
-        const pong = await this.redisService.getClient().ping();
-        return pong === 'PONG'
-          ? indicator.up()
-          : indicator.down({ message: 'ping failed' });
-      },
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
-      () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
-      () =>
-        this.disk.checkStorage('disk', {
-          path: path.parse(process.cwd()).root,
-          thresholdPercent: 0.9,
-        }),
-    ]);
+  async check() {
+    try {
+      return await this.health.check([
+        () => this.prismaHealth.isHealthy('database'),
+        async () => {
+          const indicator = this.healthIndicatorService.check('redis');
+          const pong = await this.redisService.getClient().ping();
+          return pong === 'PONG'
+            ? indicator.up()
+            : indicator.down({ message: 'ping failed' });
+        },
+        () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
+        () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
+        () =>
+          this.disk.checkStorage('disk', {
+            path: path.parse(process.cwd()).root,
+            thresholdPercent: 0.99,
+          }),
+      ]);
+    } catch (error: any) {
+      if (error && typeof error.getResponse === 'function') {
+        return error.getResponse();
+      }
+      throw error;
+    }
   }
 }
