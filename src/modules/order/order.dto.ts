@@ -17,6 +17,7 @@ const OrderItemSchema = z.object({
         section: z.string(),
         choice: z.string(),
         quantity: z.number().int().min(1).default(1),
+        productionStationId: z.number().int().optional(),
       }),
     )
     .optional(),

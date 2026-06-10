@@ -11,7 +11,7 @@ model Item {
 
   inventoryQty Int?
 
-  labels ItemLabel[]
+  labels String[]
 
   imageUrl String?
 

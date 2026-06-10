@@ -1,7 +1,8 @@
 import { sharedDtoSchema as _ } from '@/common/dto/sharedDtoSchema';
-import { ItemLabel, ItemType } from '@prisma/client';
+import { ItemType } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
+import { ItemLabel } from './item.constant';
 
 export const CreateItemSchema = z.object({
   name: _.name({ field: 'Item name' }),
