@@ -579,4 +579,121 @@ export class PaymentService {
       verifiedBy: updatedPayment.verifiedBy,
     };
   }
+
+  async getWhatsAppUrlForVerification(
+    verifiedById: number,
+    totalAmount: number,
+    actualAmount: number,
+    remark: string | null,
+    proofImages: string[] = [],
+  ) {
+    // 1. Fetch business name from BusinessProfile
+    const business = await this.prisma.businessProfile.findFirst();
+    const businessName = business?.name || 'Smart POS';
+
+    // 2. Fetch owner's phone number
+    const owner = await this.prisma.user.findFirst({
+      where: {
+        role: 'OWNER',
+        isActive: true,
+      },
+      select: {
+        phone: true,
+        businessPhone: true,
+      },
+    });
+
+    const ownerPhone = owner?.businessPhone || owner?.phone || '';
+    const cleanPhone = ownerPhone.replace(/\D/g, '');
+
+    // 3. Format date
+    const dateStr = this.formatWhatsAppDate(new Date());
+
+    // 4. Determine status
+    const isMismatch = actualAmount !== totalAmount;
+    const statusText = isMismatch ? '❌ MISMATCH' : '✅ MATCH';
+
+    // 5. Parse Cash in Store and calculate Deposit
+    const cashInStore = this.parseCashInStore(remark);
+    const depositAmount = actualAmount - cashInStore;
+
+    // 6. Clean remark and split cash in store
+    let cleanRemark = remark || '';
+    let cashInStoreLine = '';
+
+    const cashInStoreIndex = cleanRemark.toLowerCase().indexOf('cash in store');
+    if (cashInStoreIndex !== -1) {
+      cashInStoreLine = cleanRemark.substring(cashInStoreIndex).trim();
+      cleanRemark = cleanRemark.substring(0, cashInStoreIndex).trim();
+      cleanRemark = cleanRemark.replace(/[,.\s]+$/, '');
+    }
+
+    if (cleanRemark === '') {
+      cleanRemark = remark || '';
+      cashInStoreLine = '';
+    }
+
+    // 7. Format IDR helper
+    const formatIDR = (val: number) => {
+      const formatted = Math.round(val)
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return `Rp ${formatted}`;
+    };
+
+    // 8. Build message
+    let textMessage = `Closing Sales Report
+${businessName}
+${dateStr}
+
+Sales: ${formatIDR(totalAmount)}
+Funds Received: ${formatIDR(actualAmount)}
+
+${statusText}
+_________
+
+Deposit: ${formatIDR(depositAmount)}
+`;
+
+    if (cleanRemark) {
+      textMessage += `\nRemarks: ${cleanRemark}`;
+    }
+
+    if (cashInStoreLine) {
+      textMessage += `\n\n${cashInStoreLine}`;
+    }
+
+    if (proofImages && proofImages.length > 0) {
+      textMessage += `\n\nProof Images:\n` + proofImages.join('\n');
+    }
+
+    // 9. Generate url encoded text
+    const encodedText = encodeURIComponent(textMessage);
+
+    return `https://wa.me/${cleanPhone}?text=${encodedText}`;
+  }
+
+  private formatWhatsAppDate(date: Date): string {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = days[date.getDay()];
+    const day = date.getDate();
+    const monthName = months[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${dayName}, ${day} ${monthName} ${year}`;
+  }
+
+  private parseCashInStore(remark: string | null | undefined): number {
+    if (!remark) return 0;
+    const regex = /cash\s+in\s+store\s*(?:rp\.?|:)?\s*([\d.]+)/i;
+    const match = remark.match(regex);
+    if (match) {
+      const numStr = match[1].replace(/\./g, '');
+      const num = parseFloat(numStr);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  }
 }

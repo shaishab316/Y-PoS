@@ -126,10 +126,21 @@ export class PaymentController {
 
     this.eventEmitter.emit('todayPaymentVerify', data);
 
+    const whatsappUrl = await this.paymentService.getWhatsAppUrlForVerification(
+      body.verifiedById,
+      body.totalAmount,
+      body.actualAmount,
+      body.remark || null,
+      proofImageUrls,
+    );
+
     return {
       success: true,
       message: 'Payment verification record created successfully',
-      data,
+      data: {
+        ...data,
+        whatsappUrl,
+      },
     };
   }
 
