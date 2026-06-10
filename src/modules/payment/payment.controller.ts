@@ -25,6 +25,7 @@ import type { ApiResponse } from '@/common/types/api-response';
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
 import { CloudinaryService } from '@/infra/upload/cloudinary.service';
 import { ParseJsonBodyInterceptor } from '@/common/interceptors/parse-json-body.interceptor';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 const ProofImagesUploadInterceptor = createFileUploadInterceptor({
   fields: [
@@ -42,6 +43,7 @@ export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly cloudinary: CloudinaryService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get()
@@ -121,6 +123,8 @@ export class PaymentController {
       proofImageUrls,
       body.verifiedById,
     );
+
+    this.eventEmitter.emit('todayPaymentVerify', data);
 
     return {
       success: true,

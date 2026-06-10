@@ -335,9 +335,8 @@ export class PaymentService {
 
     // Define columns
     worksheet.columns = [
-      { header: 'Payment ID', key: 'id', width: 10 },
-      { header: 'Slug', key: 'slug', width: 15 },
-      { header: 'Order ID', key: 'orderId', width: 10 },
+      { header: 'Payment ID', key: 'id', width: 15 },
+      { header: 'Order ID', key: 'orderId', width: 15 },
       { header: 'Customer Name', key: 'customerName', width: 20 },
       { header: 'Payment Method', key: 'method', width: 12 },
       { header: 'Status', key: 'status', width: 12 },
@@ -351,6 +350,7 @@ export class PaymentService {
       { header: 'Cashier Name', key: 'cashierName', width: 15 },
       { header: 'Verified By', key: 'verifiedByName', width: 15 },
       { header: 'Is Verified', key: 'isVerified', width: 12 },
+      { header: 'Verification Status', key: 'verificationStatus', width: 18 },
       { header: 'Created At', key: 'createdAt', width: 20 },
       { header: 'Paid At', key: 'paidAt', width: 20 },
     ];
@@ -362,9 +362,8 @@ export class PaymentService {
         .join(', ');
 
       worksheet.addRow({
-        id: payment.id,
-        slug: payment.slug,
-        orderId: payment.orderId,
+        id: payment.slug || 'N/A',
+        orderId: payment.order?.slug || 'N/A',
         customerName: payment.order?.customerName || 'N/A',
         method: payment.method || 'CASH',
         status: payment.status || 'PENDING',
@@ -382,6 +381,7 @@ export class PaymentService {
         cashierName: payment.cashier?.name || 'N/A',
         verifiedByName: payment.verifiedBy?.name || 'N/A',
         isVerified: payment.isVerified ? 'Yes' : 'No',
+        verificationStatus: payment.verificationStatus || 'PENDING',
         createdAt: payment.createdAt
           ? new Date(payment.createdAt).toLocaleString()
           : 'N/A',

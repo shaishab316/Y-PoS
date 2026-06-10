@@ -11,6 +11,7 @@ export class MailService {
       to: data.email,
       subject: data.subject,
       html: data.body,
+      attachments: data.attachments,
     });
   }
 }
