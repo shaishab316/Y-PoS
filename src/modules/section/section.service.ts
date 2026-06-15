@@ -50,7 +50,11 @@ export class SectionService {
               include: {
                 packetSections: {
                   include: {
-                    choices: true,
+                    choices: {
+                      include: {
+                        item: true,
+                      },
+                    },
                   },
                 },
                 productionStation: true,

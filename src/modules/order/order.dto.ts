@@ -15,7 +15,7 @@ const OrderItemSchema = z.object({
     .array(
       z.object({
         section: z.string(),
-        choice: z.string(),
+        choiceItemId: z.number().int(),
         quantity: z.number().int().min(1).default(1),
         productionStationId: z.number().int().optional(),
       }),

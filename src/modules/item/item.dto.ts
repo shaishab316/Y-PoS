@@ -51,7 +51,7 @@ export class UpdatePacketSectionDto extends createZodDto(
 ) {}
 
 export const CreatePacketSectionChoiceSchema = z.object({
-  name: z.string().min(1).max(100),
+  itemId: z.number().int().min(1),
   maxQty: z.number().int().min(1).optional().default(1),
   sortOrder: z.number().int().optional(),
 });

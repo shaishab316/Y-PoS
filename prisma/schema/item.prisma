@@ -24,6 +24,7 @@ model Item {
 
   // maxPacketItems Int?
   packetSections PacketSection[]
+  packetChoices  PacketSectionChoice[]
 
   sectionItems SectionItem[]
   orderItems   OrderItem[]
@@ -62,7 +63,8 @@ model PacketSectionChoice {
   packetSectionId Int?
   packetSection   PacketSection? @relation(fields: [packetSectionId], references: [id], onDelete: Cascade)
 
-  name      String?
+  itemId    Int?
+  item      Item?   @relation(fields: [itemId], references: [id], onDelete: Cascade)
   maxQty    Int?    @default(1)
   sortOrder Int?
 

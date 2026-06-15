@@ -65,7 +65,11 @@ export class ItemService {
         include: {
           productionStation: true,
           packetSections: {
-            include: { choices: true },
+            include: {
+              choices: {
+                include: { item: true },
+              },
+            },
           },
         },
       }),
@@ -86,6 +90,7 @@ export class ItemService {
           include: {
             choices: {
               orderBy: { sortOrder: 'asc' },
+              include: { item: true },
             },
           },
         },
