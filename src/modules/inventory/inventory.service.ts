@@ -51,6 +51,10 @@ export class InventoryService {
         total,
         pages: Math.ceil(total / limit),
       },
+      meta: {
+        lowStack: await this.getLowStack(),
+        outOfStock: await this.getOutOfStack(),
+      },
     };
   }
 
@@ -348,5 +352,30 @@ export class InventoryService {
       totalSold: logs.reduce((sum, log) => sum + (log.stockSold || 0), 0),
       uniqueItems: new Set(logs.map((log) => log.itemId)).size,
     };
+  }
+
+  // stack is <= 5 but > 0
+  async getLowStack() {
+    return this.prisma.item.findMany({
+      where: {
+        inventoryQty: {
+          lte: 5,
+          gt: 0,
+        },
+      },
+    });
+  }
+
+  async getOutOfStack() {
+    return this.prisma.item.findMany({
+      where: {
+        OR: [
+          { inventoryQty: { lte: 0 } },
+          {
+            isOutOfStock: true,
+          },
+        ],
+      },
+    });
   }
 }
