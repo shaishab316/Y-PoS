@@ -102,7 +102,16 @@ export class OrderService {
             : Prisma.JsonNull,
         orderItems: { create: orderItems },
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+          },
+        },
+        table: true,
+        assignedTo: true,
+        payment: true,
+      },
     });
 
     this.eventEmitter.emit('order.created', order.id);
