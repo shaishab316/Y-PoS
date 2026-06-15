@@ -13,7 +13,7 @@ import {
   OrderProductionQueryDto,
   GetUserActiveOrdersDto,
 } from './order.dto';
-import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
+import { Prisma, PaymentStatus, OrderStatus, ItemType } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -625,6 +625,8 @@ export class OrderService {
         data: { assignedToId: dto.assignedToId },
       });
     }
+
+    this.eventEmitter.emit('order.paid', orderId);
 
     return this.prisma.payment.findUnique({
       where: { id: payment.id },
