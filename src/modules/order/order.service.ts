@@ -59,7 +59,14 @@ export class OrderService {
         unitPrice,
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
-        packetChoices: orderItem.packetChoices ?? Prisma.JsonNull,
+        packetChoices: {
+          create: orderItem.packetChoices?.map((pc) => ({
+            section: pc.section,
+            choiceItemId: pc.choiceItemId,
+            quantity: pc.quantity,
+            productionStationId: pc.productionStationId,
+          })) ?? [],
+        },
       };
     });
 
@@ -106,6 +113,11 @@ export class OrderService {
         orderItems: {
           include: {
             item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
           },
         },
         table: true,
@@ -116,12 +128,25 @@ export class OrderService {
 
     this.eventEmitter.emit('order.created', order.id);
 
-    await this.prisma.order.update({
+    return this.prisma.order.update({
       where: { id: order.id },
       data: { slug: `o-${order.id.toString().padStart(5, '0')}` },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+        table: true,
+        assignedTo: true,
+        payment: true,
+      },
     });
-
-    return order;
   }
 
   async getAllOrders({
@@ -183,7 +208,16 @@ export class OrderService {
         include: {
           table: true,
           assignedTo: true,
-          orderItems: { include: { item: true } },
+          orderItems: {
+            include: {
+              item: true,
+              packetChoices: {
+                include: {
+                  choiceItem: true,
+                },
+              },
+            },
+          },
           payment: true,
         },
       }),
@@ -251,7 +285,16 @@ export class OrderService {
         include: {
           table: true,
           assignedTo: true,
-          orderItems: { include: { item: true } },
+          orderItems: {
+            include: {
+              item: true,
+              packetChoices: {
+                include: {
+                  choiceItem: true,
+                },
+              },
+            },
+          },
           payment: true,
         },
       }),
@@ -269,6 +312,11 @@ export class OrderService {
           include: {
             item: true,
             productionStation: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
           },
         },
         payment: true,
@@ -318,7 +366,14 @@ export class OrderService {
         unitPrice,
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
-        packetChoices: orderItem.packetChoices ?? Prisma.JsonNull,
+        packetChoices: {
+          create: orderItem.packetChoices?.map((pc) => ({
+            section: pc.section,
+            choiceItemId: pc.choiceItemId,
+            quantity: pc.quantity,
+            productionStationId: pc.productionStationId,
+          })) ?? [],
+        },
       };
     });
 
@@ -331,7 +386,18 @@ export class OrderService {
         totalAmount: subtotal,
         orderItems: { create: orderItems },
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -380,7 +446,14 @@ export class OrderService {
         unitPrice,
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
-        packetChoices: orderItem.packetChoices ?? Prisma.JsonNull,
+        packetChoices: {
+          create: orderItem.packetChoices?.map((pc) => ({
+            section: pc.section,
+            choiceItemId: pc.choiceItemId,
+            quantity: pc.quantity,
+            productionStationId: pc.productionStationId,
+          })) ?? [],
+        },
       };
     });
 
@@ -393,7 +466,18 @@ export class OrderService {
         totalAmount: subtotal,
         orderItems: { create: orderItems },
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -413,7 +497,18 @@ export class OrderService {
     return this.prisma.order.update({
       where: { id },
       data: { status: OrderStatus.CANCELLED },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -458,7 +553,16 @@ export class OrderService {
         include: {
           table: true,
           assignedTo: true,
-          orderItems: { include: { item: true } },
+          orderItems: {
+            include: {
+              item: true,
+              packetChoices: {
+                include: {
+                  choiceItem: true,
+                },
+              },
+            },
+          },
           payment: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -471,7 +575,16 @@ export class OrderService {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
-        orderItems: true,
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
         payment: true,
         table: {
           select: {
@@ -500,7 +613,18 @@ export class OrderService {
     return this.prisma.order.update({
       where: { id },
       data: { status: OrderStatus.PENDING_PROCESSING },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -519,7 +643,18 @@ export class OrderService {
         status: OrderStatus.PROCESSING,
         processedAt: new Date(),
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -540,7 +675,16 @@ export class OrderService {
         readyAt: new Date(),
       },
       include: {
-        orderItems: true,
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
         table: {
           select: {
             tableNumber: true,
@@ -572,7 +716,16 @@ export class OrderService {
         pickedUpAt: new Date(),
       },
       include: {
-        orderItems: true,
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
         table: {
           select: {
             tableNumber: true,
@@ -639,7 +792,24 @@ export class OrderService {
 
     return this.prisma.payment.findUnique({
       where: { id: payment.id },
-      include: { order: true },
+      include: {
+        order: {
+          include: {
+            table: true,
+            assignedTo: true,
+            orderItems: {
+              include: {
+                item: true,
+                packetChoices: {
+                  include: {
+                    choiceItem: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -661,7 +831,16 @@ export class OrderService {
         include: {
           table: true,
           assignedTo: true,
-          orderItems: { include: { item: true } },
+          orderItems: {
+            include: {
+              item: true,
+              packetChoices: {
+                include: {
+                  choiceItem: true,
+                },
+              },
+            },
+          },
           payment: true,
         },
         skip: (page - 1) * limit,

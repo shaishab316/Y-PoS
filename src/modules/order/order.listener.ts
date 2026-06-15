@@ -62,6 +62,7 @@ export class OrderListener {
           orderItems: {
             include: {
               item: true,
+              packetChoices: true,
             },
           },
         },

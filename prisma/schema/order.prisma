@@ -56,7 +56,7 @@ model OrderItem {
 
   status OrderStatus? @default(PENDING)
 
-  packetChoices Json?
+  packetChoices OrderItemPacketChoice[]
 
   isCancelled      Boolean?  @default(false)
   cancelledAt      DateTime?
@@ -67,4 +67,23 @@ model OrderItem {
   pickedUpAt  DateTime?
 
   @@map("order_items")
+}
+
+model OrderItemPacketChoice {
+  id String @id @default(uuid())
+
+  orderItemId String?
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  section String?
+
+  choiceItemId Int?
+  choiceItem   Item? @relation(fields: [choiceItemId], references: [id], onDelete: SetNull)
+
+  quantity Int? @default(1)
+
+  productionStationId Int?
+  productionStation   ProductionStation? @relation(fields: [productionStationId], references: [id], onDelete: SetNull)
+
+  @@map("order_item_packet_choices")
 }

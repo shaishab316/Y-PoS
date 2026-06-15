@@ -28,6 +28,7 @@ model Item {
 
   sectionItems SectionItem[]
   orderItems   OrderItem[]
+  orderItemPacketChoices OrderItemPacketChoice[]
 
   sortOrder Int?
 

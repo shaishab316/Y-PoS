@@ -10,6 +10,7 @@ model ProductionStation {
   items          Item[]
   orderItems     OrderItem[]
   packetSections PacketSection[]
+  orderItemPacketChoices OrderItemPacketChoice[]
 
   users User[]
 
