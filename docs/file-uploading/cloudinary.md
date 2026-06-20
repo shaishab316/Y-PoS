@@ -14,7 +14,7 @@ createFileUploadInterceptor({
     name: 'fieldName',           // must match multipart field name
     maxCount: 1,
     maxFileSize: 5 * 1024 * 1024,
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    allowedMimeTypes: ['*'],     // use '*' to allow any mimetype
   }]
 })
 ```

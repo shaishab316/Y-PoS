@@ -33,7 +33,7 @@ const ProofImagesUploadInterceptor = createFileUploadInterceptor({
       name: 'proofImages',
       maxCount: 5,
       maxFileSize: 15 * 1024 * 1024, // 15 MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ['*'],
     },
   ],
 });

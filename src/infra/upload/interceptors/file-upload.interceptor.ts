@@ -76,7 +76,16 @@ const createFileFilter = (config: FileUploadConfig) => {
         new BadRequestException(`Unexpected field: "${file.fieldname}"`),
       );
 
-    if (!field.allowedMimeTypes.includes(file.mimetype))
+    const isAllowed = field.allowedMimeTypes.some((allowedType) => {
+      if (allowedType === '*' || allowedType === '*/*') return true;
+      if (allowedType.endsWith('/*')) {
+        const prefix = allowedType.split('/')[0];
+        return file.mimetype.startsWith(prefix + '/');
+      }
+      return allowedType === file.mimetype;
+    });
+
+    if (!isAllowed)
       return cb(
         new BadRequestException(
           `"${file.fieldname}" does not accept "${file.mimetype}"`,

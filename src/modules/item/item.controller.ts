@@ -40,7 +40,7 @@ const ImageUploadInterceptor = createFileUploadInterceptor({
       name: 'image',
       maxCount: 1,
       maxFileSize: 5 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ['*'],
     },
   ],
 });

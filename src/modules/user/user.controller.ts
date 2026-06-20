@@ -38,7 +38,7 @@ const PhotoUploadInterceptor = createFileUploadInterceptor({
       name: 'photo',
       maxCount: 1,
       maxFileSize: 5 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ['*'],
     },
   ],
 });
@@ -49,7 +49,7 @@ const LogoUploadInterceptor = createFileUploadInterceptor({
       name: 'logo',
       maxCount: 1,
       maxFileSize: 5 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ['*'],
     },
   ],
 });

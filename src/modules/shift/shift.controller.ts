@@ -29,7 +29,7 @@ const CashProofUploadInterceptor = createFileUploadInterceptor({
       name: 'cashProof',
       maxCount: 1,
       maxFileSize: 10 * 1024 * 1024, // 10 MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ['*'],
     },
   ],
 });
