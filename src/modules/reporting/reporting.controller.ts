@@ -39,26 +39,17 @@ export class ReportingController {
   async getEfficiencyReport(
     @Query() query: DateRangeQueryDto,
   ): Promise<ApiResponse> {
-    const data = await this.reportingService.getEfficiencyReport(query);
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
 
-    data.mostPopularByStation.map((station) => {
-      if (!station.items.length) {
-        station.items.push({
-          id: 0,
-          itemName: 'Sample item',
-          prepTime: '123',
-          totalOrders: 0,
-        });
-      }
+    const data = await this.reportingService.getEfficiencyReport({
+      ...query,
+      startDate: todayStr,
+      endDate: todayStr,
     });
-
-    if (!data.longestPrepTimeItems.length) {
-      data.longestPrepTimeItems.push({
-        itemName: 'Sample item',
-        prepTime: '123',
-        stationName: 'Sample station',
-      });
-    }
 
     return {
       message: 'Efficiency report generated successfully',
