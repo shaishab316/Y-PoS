@@ -22,11 +22,6 @@ export class AnalyticsController {
   ): Promise<ApiResponse> {
     const data = await this.analyticsService.getSalesReport(query);
 
-    data.productionPerformance.push({
-      itemName: 'Gugu',
-      avgPrepTime: 5,
-    });
-
     return {
       success: true,
       data,
