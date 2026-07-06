@@ -30,32 +30,15 @@ export class OrderListener {
     this.socketGateway.emit('*', 'orderPickedUp', payload);
   }
 
-  @OnEvent('order.created')
-  async createReceiptOnOrderCreated(orderId: number) {
-    try {
-      this.logger.log(`🧾 Generating receipt for order ${orderId}...`);
-      const receiptUrl =
-        await this.receiptService.generateAndUploadReceipt(orderId);
-      this.logger.log(`✅ Receipt generated and uploaded: ${receiptUrl}`);
-
-      // Emit receipt event to frontend via socket
-      this.socketGateway.emit('*', 'receiptGenerated', {
-        orderId,
-        receiptUrl,
-      });
-    } catch (error) {
-      this.logger.error(
-        `❌ Failed to generate receipt for order ${orderId}:`,
-        error,
-      );
-      // Don't throw, just log - don't break order creation
-    }
-  }
+  // @OnEvent('order.created')
+  // async createReceiptOnOrderCreated(orderId: number) {}
 
   @OnEvent('order.paid')
   async handleOrderPaid(orderId: number) {
     try {
-      this.logger.log(`📦 Processing inventory updates for paid order ${orderId}...`);
+      this.logger.log(
+        `📦 Processing inventory updates for paid order ${orderId}...`,
+      );
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
         include: {
@@ -69,7 +52,9 @@ export class OrderListener {
       });
 
       if (!order) {
-        this.logger.error(`❌ Order with id ${orderId} not found for inventory processing`);
+        this.logger.error(
+          `❌ Order with id ${orderId} not found for inventory processing`,
+        );
         return;
       }
 
@@ -87,7 +72,8 @@ export class OrderListener {
             orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           });
 
-          const openingStock = lastLog?.closingStock ?? orderItem.item.inventoryQty ?? 0;
+          const openingStock =
+            lastLog?.closingStock ?? orderItem.item.inventoryQty ?? 0;
           const closingStock = openingStock - qty;
 
           // Update item inventory
@@ -114,9 +100,11 @@ export class OrderListener {
             where: { id: log.id },
             data: { slug: `il-${log.id.toString().padStart(5, '0')}` },
           });
-
         } else if (orderItem.item.itemType === ItemType.PACKET) {
-          if (orderItem.packetChoices && Array.isArray(orderItem.packetChoices)) {
+          if (
+            orderItem.packetChoices &&
+            Array.isArray(orderItem.packetChoices)
+          ) {
             const choices = orderItem.packetChoices as any[];
             const choiceItemIds = choices
               .map((c) => c.choiceItemId)
@@ -140,7 +128,8 @@ export class OrderListener {
                   orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
                 });
 
-                const openingStock = lastLog?.closingStock ?? choiceItem.inventoryQty ?? 0;
+                const openingStock =
+                  lastLog?.closingStock ?? choiceItem.inventoryQty ?? 0;
                 const closingStock = openingStock - choiceQty;
 
                 // Update choice item inventory
@@ -172,7 +161,9 @@ export class OrderListener {
           }
         }
       }
-      this.logger.log(`✅ Inventory updates completed for paid order ${orderId}`);
+      this.logger.log(
+        `✅ Inventory updates completed for paid order ${orderId}`,
+      );
     } catch (error) {
       this.logger.error(
         `❌ Failed to update inventory for order ${orderId}:`,
