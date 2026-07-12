@@ -24,6 +24,19 @@ export class OrderService {
   ) {}
 
   async createOrder(dto: CreateOrderDto) {
+    let tableId: number | null = null;
+
+    if (dto.tableId) {
+      const table = await this.prisma.table.findUnique({
+        where: {
+          id: dto.tableId,
+        },
+      });
+      if (table) {
+        tableId = table.id;
+      }
+    }
+
     const itemIds = dto.items.map((i) => i.itemId);
 
     const items = await this.prisma.item.findMany({
@@ -60,12 +73,13 @@ export class OrderService {
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
         packetChoices: {
-          create: orderItem.packetChoices?.map((pc) => ({
-            section: pc.section,
-            choiceItemId: pc.choiceItemId,
-            quantity: pc.quantity,
-            productionStationId: pc.productionStationId,
-          })) ?? [],
+          create:
+            orderItem.packetChoices?.map((pc) => ({
+              section: pc.section,
+              choiceItemId: pc.choiceItemId,
+              quantity: pc.quantity,
+              productionStationId: pc.productionStationId,
+            })) ?? [],
         },
       };
     });
@@ -99,7 +113,7 @@ export class OrderService {
         userId: dto.userId,
         source: dto.source,
         type: dto.type,
-        tableId: dto.tableId,
+        tableId,
         customerName: dto.customerName,
         subtotal,
         totalAmount,
@@ -367,12 +381,13 @@ export class OrderService {
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
         packetChoices: {
-          create: orderItem.packetChoices?.map((pc) => ({
-            section: pc.section,
-            choiceItemId: pc.choiceItemId,
-            quantity: pc.quantity,
-            productionStationId: pc.productionStationId,
-          })) ?? [],
+          create:
+            orderItem.packetChoices?.map((pc) => ({
+              section: pc.section,
+              choiceItemId: pc.choiceItemId,
+              quantity: pc.quantity,
+              productionStationId: pc.productionStationId,
+            })) ?? [],
         },
       };
     });
@@ -447,12 +462,13 @@ export class OrderService {
         promoPrice: item.promoPrice ? Number(item.promoPrice) : null,
         quantity: orderItem.quantity,
         packetChoices: {
-          create: orderItem.packetChoices?.map((pc) => ({
-            section: pc.section,
-            choiceItemId: pc.choiceItemId,
-            quantity: pc.quantity,
-            productionStationId: pc.productionStationId,
-          })) ?? [],
+          create:
+            orderItem.packetChoices?.map((pc) => ({
+              section: pc.section,
+              choiceItemId: pc.choiceItemId,
+              quantity: pc.quantity,
+              productionStationId: pc.productionStationId,
+            })) ?? [],
         },
       };
     });
