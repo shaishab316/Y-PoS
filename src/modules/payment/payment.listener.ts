@@ -17,43 +17,24 @@ export class PaymentListener {
   @OnEvent('todayPaymentVerify')
   async handleTodayPaymentVerify(data: any) {
     try {
-      this.logger.log(`📥 Received 'todayPaymentVerify' event for verification record ID ${data.id}...`);
+      this.logger.log(
+        `📥 Received 'todayPaymentVerify' event for verification record ID ${data.id}...`,
+      );
 
-      // 1. Fetch all active users with role = OWNER
-      const owners = await this.prisma.user.findMany({
-        where: {
-          role: 'OWNER',
-          isActive: true,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          businessEmail: true,
-        },
-      });
+      const businessProfile = await this.prisma.businessProfile.findFirst();
 
-      if (!owners.length) {
-        this.logger.warn('⚠️ No active users with role OWNER found. Skipping email report.');
-        return;
-      }
-
-      // Collect recipient email addresses
-      const emails = owners
-        .map((owner) => owner.email ?? owner.businessEmail)
-        .filter((email): email is string => !!email);
-
-      if (!emails.length) {
-        this.logger.warn('⚠️ No email addresses found for owners. Skipping email report.');
-        return;
+      if (!businessProfile?.email) {
+        return; // skip
       }
 
       // 2. Generate the Excel workbook buffer for today's payments
-      this.logger.log('📊 Exporting today\'s payments to Excel buffer...');
+      this.logger.log("📊 Exporting today's payments to Excel buffer...");
       const buffer = await this.paymentService.exportTodayPaymentsToExcel();
 
       // 3. Format date and metrics for HTML template
-      const formattedDate = new Date(data.date || new Date()).toLocaleDateString('en-US', {
+      const formattedDate = new Date(
+        data.date || new Date(),
+      ).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -228,34 +209,42 @@ export class PaymentListener {
       const attachmentName = `today-payments-${new Date().toISOString().split('T')[0]}.xlsx`;
       const subject = `Daily Payment Verification Report - ${formattedDate}`;
 
-      const proofImageAttachments = (data.proofImages || []).map((url: string, index: number) => {
-        const ext = url.split('.').pop()?.split('?')[0] || 'jpg';
-        return {
-          filename: `proof-image-${index + 1}.${ext}`,
-          path: url,
-        };
+      const proofImageAttachments = (data.proofImages || []).map(
+        (url: string, index: number) => {
+          const ext = url.split('.').pop()?.split('?')[0] || 'jpg';
+          return {
+            filename: `proof-image-${index + 1}.${ext}`,
+            path: url,
+          };
+        },
+      );
+
+      this.logger.log(
+        `✉️ Sending payment verification report email to: ${businessProfile.email}...`,
+      );
+      await this.mailService.sendMail({
+        email: businessProfile.email,
+        subject,
+        body: htmlBody,
+        attachments: [
+          {
+            filename: attachmentName,
+            content: Buffer.from(buffer),
+            contentType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+          ...proofImageAttachments,
+        ],
       });
 
-      for (const email of emails) {
-        this.logger.log(`✉️ Sending payment verification report email to: ${email}...`);
-        await this.mailService.sendMail({
-          email,
-          subject,
-          body: htmlBody,
-          attachments: [
-            {
-              filename: attachmentName,
-              content: Buffer.from(buffer),
-              contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            },
-            ...proofImageAttachments,
-          ],
-        });
-      }
-
-      this.logger.log('✅ Daily payment verification emails sent successfully.');
+      this.logger.log(
+        '✅ Daily payment verification emails sent successfully.',
+      );
     } catch (error) {
-      this.logger.error('❌ Failed to process todayPaymentVerify event and send emails:', error);
+      this.logger.error(
+        '❌ Failed to process todayPaymentVerify event and send emails:',
+        error,
+      );
     }
   }
 }
