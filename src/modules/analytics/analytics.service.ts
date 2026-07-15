@@ -232,7 +232,7 @@ export class AnalyticsService {
         p."paidAt" >= ${startDate}
         AND p."paidAt" <= ${endDate}
         AND p.status = ${'PAID'}
-      GROUP BY CAST(o."createdAt" AT TIME ZONE ${timezone} as DATE)
+      GROUP BY 1
       ORDER BY date ASC
     `;
 
@@ -258,7 +258,7 @@ export class AnalyticsService {
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
         AND o.status != ${'CANCELLED'}
-      GROUP BY EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE ${timezone})
+      GROUP BY 1
       ORDER BY hour ASC
     `;
 
