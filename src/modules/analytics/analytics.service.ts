@@ -223,7 +223,7 @@ export class AnalyticsService {
       Array<{ date: Date; revenue: string; orders: number }>
     >`
       SELECT 
-        CAST(o."createdAt" AT TIME ZONE ${timezone} as DATE) as date,
+        CAST(o."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone} as DATE) as date,
         SUM(CAST(p."totalAmount" AS DECIMAL(10,2))) as revenue,
         COUNT(DISTINCT o.id) as orders
       FROM payments p
@@ -251,7 +251,7 @@ export class AnalyticsService {
       Array<{ hour: number | string | object; count: number }>
     >`
       SELECT 
-        CAST(EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE ${timezone}) AS INTEGER) as hour,
+        CAST(EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}) AS INTEGER) as hour,
         COUNT(*) as count
       FROM orders o
       WHERE 
