@@ -6,20 +6,87 @@ import { DateRangeQueryDto } from './analytics.dto';
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getTzOffsetSuffix(timezone: string): string {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        timeZoneName: 'longOffset',
+      });
+      const parts = formatter.formatToParts(new Date());
+      const offsetPart = parts.find((p) => p.type === 'timeZoneName');
+      if (offsetPart) {
+        const val = offsetPart.value;
+        const match = val.match(/GMT([+-]\d+)(?::(\d+))?/);
+        if (match) {
+          const sign = match[1][0];
+          const hours = match[1].slice(1).padStart(2, '0');
+          const mins = (match[2] || '00').padStart(2, '0');
+          return `${sign}${hours}:${mins}`;
+        }
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return '+07:00';
+  }
+
+  private parseDateAsLocal(
+    dateStr: string,
+    isEnd: boolean,
+    timezone: string,
+  ): Date {
+    let offset = '+07:00';
+    if (timezone === 'UTC') {
+      offset = 'Z';
+    } else if (timezone.startsWith('+') || timezone.startsWith('-')) {
+      offset = timezone;
+    } else {
+      offset = this.getTzOffsetSuffix(timezone);
+    }
+
+    if (dateStr.includes('T')) {
+      return new Date(dateStr);
+    }
+
+    const timeStr = isEnd ? '23:59:59.999' : '00:00:00.000';
+    return new Date(`${dateStr}T${timeStr}${offset}`);
+  }
+
   private getDateRange(query: DateRangeQueryDto) {
+    const timezone = 'Asia/Bangkok';
     let startDate = new Date();
     let endDate = new Date();
 
     if (query.startDate) {
-      startDate = new Date(query.startDate);
+      startDate = this.parseDateAsLocal(query.startDate, false, timezone);
     } else {
       // Default: last 7 days
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const todayStr = formatter.format(new Date());
+      const offsetSuffix = this.getTzOffsetSuffix(timezone);
+      const todayLocal = new Date(`${todayStr}T00:00:00.000${offsetSuffix}`);
+
+      startDate = new Date(todayLocal);
       startDate.setDate(startDate.getDate() - 7);
     }
 
     if (query.endDate) {
-      endDate = new Date(query.endDate);
-      endDate.setHours(23, 59, 59, 999);
+      endDate = this.parseDateAsLocal(query.endDate, true, timezone);
+    } else {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const todayStr = formatter.format(new Date());
+      const offsetSuffix = this.getTzOffsetSuffix(timezone);
+      endDate = new Date(`${todayStr}T23:59:59.999${offsetSuffix}`);
     }
 
     return { startDate, endDate };
@@ -150,12 +217,13 @@ export class AnalyticsService {
 
   async getSalesOverTime(query: DateRangeQueryDto) {
     const { startDate, endDate } = this.getDateRange(query);
+    const timezone = 'Asia/Bangkok';
 
     const salesData = await this.prisma.$queryRaw<
       Array<{ date: Date; revenue: string; orders: number }>
     >`
       SELECT 
-        CAST(o."createdAt" as DATE) as date,
+        CAST(o."createdAt" AT TIME ZONE ${timezone} as DATE) as date,
         SUM(CAST(p."totalAmount" AS DECIMAL(10,2))) as revenue,
         COUNT(DISTINCT o.id) as orders
       FROM payments p
@@ -164,7 +232,7 @@ export class AnalyticsService {
         p."paidAt" >= ${startDate}
         AND p."paidAt" <= ${endDate}
         AND p.status = ${'PAID'}
-      GROUP BY CAST(o."createdAt" as DATE)
+      GROUP BY CAST(o."createdAt" AT TIME ZONE ${timezone} as DATE)
       ORDER BY date ASC
     `;
 
@@ -177,26 +245,27 @@ export class AnalyticsService {
 
   async getOrdersPerHour(query: DateRangeQueryDto) {
     const { startDate, endDate } = this.getDateRange(query);
+    const timezone = 'Asia/Bangkok';
 
     const hoursData = await this.prisma.$queryRaw<
-      Array<{ hour: number; count: number }>
+      Array<{ hour: number | string | object; count: number }>
     >`
       SELECT 
-        EXTRACT(HOUR FROM o."createdAt") as hour,
+        CAST(EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE ${timezone}) AS INTEGER) as hour,
         COUNT(*) as count
       FROM orders o
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
         AND o.status != ${'CANCELLED'}
-      GROUP BY EXTRACT(HOUR FROM o."createdAt")
+      GROUP BY EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE ${timezone})
       ORDER BY hour ASC
     `;
 
     // Fill in missing hours with 0
     const result: any[] = [];
     for (let h = 0; h < 24; h++) {
-      const hourData = hoursData.find((d) => d.hour === h);
+      const hourData = hoursData.find((d) => Number(d.hour) === h);
       result.push({
         hour: h,
         count: hourData ? Number(hourData.count) : 0,
