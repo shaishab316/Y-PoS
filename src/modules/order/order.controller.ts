@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -266,5 +267,16 @@ export class OrderController {
     const data = await this.orderService.markOrderPickedUp(id);
 
     return { message: 'Order marked as picked up successfully', data };
+  }
+
+  @Delete(':id')
+  @InvalidateCache('order:*')
+  @HttpCode(HttpStatus.OK)
+  async deleteOrder(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.deleteOrder(id);
+
+    return { message: 'Order deleted successfully', data };
   }
 }

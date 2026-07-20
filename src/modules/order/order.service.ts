@@ -865,4 +865,29 @@ export class OrderService {
       this.prisma.order.count({ where }),
     ]);
   }
+
+  async deleteOrder(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { payment: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order #${id} not found`);
+    }
+
+    const hasPaidPayment = order.payment.some(
+      (p) => p.status === PaymentStatus.PAID,
+    );
+
+    if (hasPaidPayment) {
+      throw new BadRequestException(
+        'Cannot delete an order that has already been paid',
+      );
+    }
+
+    await this.prisma.order.delete({ where: { id } });
+
+    return { id };
+  }
 }
