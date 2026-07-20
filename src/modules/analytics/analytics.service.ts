@@ -111,10 +111,10 @@ export class AnalyticsService {
       FROM order_items oi
       JOIN items i ON oi."itemId" = i.id
       JOIN orders o ON oi."orderId" = o.id
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
-        AND o.status != ${'CANCELLED'}
         AND oi."isCancelled" = false
       GROUP BY i.id, i.name
       ORDER BY "totalSold" DESC
@@ -193,12 +193,12 @@ export class AnalyticsService {
     >`
       SELECT 
         COALESCE(o.type, 'DINE_IN') as type,
-        COUNT(*) as count
+        COUNT(DISTINCT o.id) as count
       FROM orders o
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
-        AND o.status != ${'CANCELLED'}
       GROUP BY o.type
     `;
 
@@ -252,12 +252,12 @@ export class AnalyticsService {
     >`
       SELECT 
         CAST(EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}) AS INTEGER) as hour,
-        COUNT(*) as count
+        COUNT(DISTINCT o.id) as count
       FROM orders o
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
-        AND o.status != ${'CANCELLED'}
       GROUP BY 1
       ORDER BY hour ASC
     `;
@@ -317,10 +317,10 @@ export class AnalyticsService {
       FROM order_items oi
       LEFT JOIN items i ON oi."itemId" = i.id
       JOIN orders o ON oi."orderId" = o.id
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
-        AND o.status != ${'CANCELLED'}
         AND oi."isCancelled" = false
       GROUP BY oi."itemName", i."itemType"
       ORDER BY quantity DESC
@@ -333,12 +333,12 @@ export class AnalyticsService {
     >`
       SELECT 
         COALESCE(o.type, 'DINE_IN') as type,
-        COUNT(*) as count
+        COUNT(DISTINCT o.id) as count
       FROM orders o
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
-        AND o.status != ${'CANCELLED'}
       GROUP BY o.type
     `;
 
@@ -413,6 +413,7 @@ export class AnalyticsService {
         ROUND(AVG(EXTRACT(EPOCH FROM (oi."readyAt" - oi."processedAt"))) / 60)::integer as "avgTime"
       FROM order_items oi
       JOIN orders o ON oi."orderId" = o.id
+      JOIN payments p ON p."orderId" = o.id AND p.status = ${'PAID'}
       WHERE 
         o."createdAt" >= ${startDate}
         AND o."createdAt" <= ${endDate}
