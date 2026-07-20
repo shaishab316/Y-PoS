@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { PaymentService } from './payment.service';
 import { MailService } from '@/infra/mail/mail.service';
@@ -243,6 +244,167 @@ export class PaymentListener {
     } catch (error) {
       this.logger.error(
         '❌ Failed to process todayPaymentVerify event and send emails:',
+        error,
+      );
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async handleMidnightPaymentReport() {
+    try {
+      this.logger.log(
+        '🕛 [Midnight Cron] Starting automatic daily payment report...',
+      );
+
+      const businessProfile = await this.prisma.businessProfile.findFirst();
+
+      if (!businessProfile?.email) {
+        this.logger.warn(
+          '⚠️ [Midnight Cron] No business email configured — skipping report.',
+        );
+        return;
+      }
+
+      // Generate Excel for today's payments
+      this.logger.log(
+        "📊 [Midnight Cron] Exporting today's payments to Excel...",
+      );
+      const buffer = await this.paymentService.exportTodayPaymentsToExcel();
+
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const dateSlug = today.toISOString().split('T')[0];
+      const attachmentName = `daily-payments-${dateSlug}.xlsx`;
+
+      const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Daily Payment Summary</title>
+      </head>
+      <body style="background-color: #f1f5f9; padding: 24px 0; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center">
+              <!-- Main Card -->
+              <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <!-- Top Gradient Accent -->
+                <tr>
+                  <td height="6" style="background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 100%);"></td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                  <td style="padding: 40px;">
+
+                    <!-- Header -->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                      <tr>
+                        <td>
+                          <div style="color: #0ea5e9; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Smart POS · Automated Report</div>
+                          <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.02em;">📅 Daily Payment Summary</h1>
+                          <p style="color: #64748b; font-size: 14px; margin: 6px 0 0 0;">This report was automatically generated at midnight for <strong>${formattedDate}</strong>.</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Info Banner -->
+                    <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 18px 20px; margin-bottom: 28px; display: flex; align-items: flex-start;">
+                      <span style="font-size: 22px; margin-right: 12px;">📊</span>
+                      <div>
+                        <p style="color: #0369a1; font-weight: 700; font-size: 14px; margin: 0 0 4px 0;">Today's Payment Export Ready</p>
+                        <p style="color: #0c4a6e; font-size: 13px; margin: 0; line-height: 1.6;">The complete list of today's payment transactions has been compiled and is attached as an Excel file (<strong>${attachmentName}</strong>). Please review and archive it for your records.</p>
+                      </div>
+                    </div>
+
+                    <!-- Details Row -->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                          <span style="color: #64748b; font-size: 13px; font-weight: 500;">Report Date:</span>
+                        </td>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; text-align: right;">
+                          <span style="color: #1e293b; font-size: 13px; font-weight: 600;">${formattedDate}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                          <span style="color: #64748b; font-size: 13px; font-weight: 500;">Generated At:</span>
+                        </td>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; text-align: right;">
+                          <span style="color: #1e293b; font-size: 13px; font-weight: 600;">${new Date().toLocaleString('en-US')}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0;">
+                          <span style="color: #64748b; font-size: 13px; font-weight: 500;">Attachment:</span>
+                        </td>
+                        <td style="padding: 12px 0; text-align: right;">
+                          <span style="color: #4f46e5; font-size: 13px; font-weight: 600;">${attachmentName}</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Note -->
+                    <div style="background-color: #faf5ff; border: 1px solid #f3e8ff; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                      <p style="color: #6b21a8; font-size: 13px; margin: 0; line-height: 1.5; font-weight: 500;">
+                        ℹ️ This report is sent automatically every midnight by Smart POS. No action is required unless a discrepancy is found during manual review.
+                      </p>
+                    </div>
+
+                    <!-- Divider -->
+                    <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 28px 0 20px 0;">
+
+                    <!-- Footer -->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center">
+                          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated nightly report from Smart POS.</p>
+                          <p style="color: #94a3b8; font-size: 12px; margin: 4px 0 0 0;">&copy; ${new Date().getFullYear()} Smart POS. All rights reserved.</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+      `;
+
+      this.logger.log(
+        `✉️ [Midnight Cron] Sending daily report to: ${businessProfile.email}...`,
+      );
+      await this.mailService.sendMail({
+        email: businessProfile.email,
+        subject: `Daily Payment Summary — ${formattedDate}`,
+        body: htmlBody,
+        attachments: [
+          {
+            filename: attachmentName,
+            content: Buffer.from(buffer),
+            contentType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        ],
+      });
+
+      this.logger.log(
+        '✅ [Midnight Cron] Daily payment summary email sent successfully.',
+      );
+    } catch (error) {
+      this.logger.error(
+        '❌ [Midnight Cron] Failed to send midnight payment report:',
         error,
       );
     }
