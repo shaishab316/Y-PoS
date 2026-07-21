@@ -249,11 +249,11 @@ export class PaymentListener {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron('0 16 * * *') // 23:00 GMT+7 (16:00 UTC) — runs before local midnight
   async handleMidnightPaymentReport() {
     try {
       this.logger.log(
-        '🕛 [Midnight Cron] Starting automatic daily payment report...',
+        '🕛 [11PM Cron] Starting automatic daily payment report...',
       );
 
       const businessProfile = await this.prisma.businessProfile.findFirst();
