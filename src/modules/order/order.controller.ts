@@ -22,6 +22,7 @@ import {
   PaginationQueryDto,
   OrderProductionQueryDto,
   GetUserActiveOrdersDto,
+  UpdateOrderPricingAdjustmentsDto,
 } from './order.dto';
 import {
   InvalidateCache,
@@ -212,6 +213,20 @@ export class OrderController {
     const data = await this.orderService.editOrder(id, body);
 
     return { message: 'Order edited successfully', data };
+  }
+
+  @Patch(':id/pricing-adjustments')
+  @InvalidateCache('order:*')
+  async updateOrderPricingAdjustments(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Body() body: UpdateOrderPricingAdjustmentsDto,
+  ): Promise<ApiResponse> {
+    const data = await this.orderService.updatePricingAdjustments(
+      orderId,
+      body,
+    );
+
+    return { message: 'Order pricing adjustments updated successfully', data };
   }
 
   @Patch(':id/cancel')

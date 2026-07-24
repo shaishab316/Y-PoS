@@ -12,6 +12,7 @@ import {
   PaginationQueryDto,
   OrderProductionQueryDto,
   GetUserActiveOrdersDto,
+  UpdateOrderPricingAdjustmentsDto,
 } from './order.dto';
 import { Prisma, PaymentStatus, OrderStatus, ItemType } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -22,6 +23,28 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  private calculateTotalAmount(
+    subtotal: number,
+    pricingAdjustments: any,
+  ): number {
+    let totalAmount = subtotal;
+    if (pricingAdjustments && Array.isArray(pricingAdjustments)) {
+      for (const adjustment of pricingAdjustments) {
+        if (adjustment.type === 'PERCENTAGE' && adjustment.percentage) {
+          const adjustmentAmount =
+            (subtotal * Number(adjustment.percentage)) / 100;
+          totalAmount += adjustmentAmount;
+        } else if (
+          adjustment.type === 'FIXED_AMOUNT' &&
+          adjustment.fixedAmount
+        ) {
+          totalAmount += Number(adjustment.fixedAmount);
+        }
+      }
+    }
+    return totalAmount;
+  }
 
   async createOrder(dto: CreateOrderDto) {
     let tableId: number | null = null;
@@ -88,7 +111,6 @@ export class OrderService {
     const pricingAdjustmentsFromDb =
       await this.prisma.pricingAdjustment.findMany();
 
-    let totalAmount = subtotal;
     const pricingAdjustmentsSnapshots = pricingAdjustmentsFromDb.map((adj) => ({
       id: adj.id,
       level: adj.level,
@@ -97,16 +119,10 @@ export class OrderService {
       fixedAmount: adj.fixedAmount ? Number(adj.fixedAmount) : null,
     }));
 
-    // Apply adjustments to calculate total amount
-    for (const adjustment of pricingAdjustmentsFromDb) {
-      if (adjustment.type === 'PERCENTAGE' && adjustment.percentage) {
-        const adjustmentAmount =
-          (subtotal * Number(adjustment.percentage)) / 100;
-        totalAmount += adjustmentAmount;
-      } else if (adjustment.type === 'FIXED_AMOUNT' && adjustment.fixedAmount) {
-        totalAmount += Number(adjustment.fixedAmount);
-      }
-    }
+    const totalAmount = this.calculateTotalAmount(
+      subtotal,
+      pricingAdjustmentsSnapshots,
+    );
 
     const order = await this.prisma.order.create({
       data: {
@@ -473,13 +489,18 @@ export class OrderService {
       };
     });
 
+    const totalAmount = this.calculateTotalAmount(
+      subtotal,
+      order.pricingAdjustments,
+    );
+
     await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
 
     return this.prisma.order.update({
       where: { id },
       data: {
         subtotal,
-        totalAmount: subtotal,
+        totalAmount,
         orderItems: { create: orderItems },
       },
       include: {
@@ -493,6 +514,70 @@ export class OrderService {
             },
           },
         },
+      },
+    });
+  }
+
+  async updatePricingAdjustments(
+    orderId: number,
+    dto: UpdateOrderPricingAdjustmentsDto,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with id ${orderId} not found`);
+    }
+
+    if (
+      order.status !== OrderStatus.PENDING &&
+      order.status !== OrderStatus.PENDING_PROCESSING
+    ) {
+      throw new BadRequestException(
+        `Cannot update pricing adjustments for order in "${order.status}" status.`,
+      );
+    }
+
+    if (order.payment && order.payment.length > 0) {
+      throw new BadRequestException(
+        'Cannot update pricing adjustments as payment has already been submitted.',
+      );
+    }
+
+    const subtotal = Number(order.subtotal || 0);
+    const pricingAdjustments = dto.pricingAdjustments.map((adj) => ({
+      ...(adj.id !== undefined && { id: adj.id }),
+      level: adj.level,
+      type: adj.type,
+      percentage: adj.percentage ? Number(adj.percentage) : null,
+      fixedAmount: adj.fixedAmount ? Number(adj.fixedAmount) : null,
+    }));
+
+    const totalAmount = this.calculateTotalAmount(subtotal, pricingAdjustments);
+
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        pricingAdjustments:
+          pricingAdjustments.length > 0 ? pricingAdjustments : Prisma.JsonNull,
+        totalAmount,
+      },
+      include: {
+        orderItems: {
+          include: {
+            item: true,
+            packetChoices: {
+              include: {
+                choiceItem: true,
+              },
+            },
+          },
+        },
+        table: true,
+        assignedTo: true,
+        payment: true,
       },
     });
   }

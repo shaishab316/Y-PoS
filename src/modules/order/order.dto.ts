@@ -4,6 +4,7 @@ import {
   OrderType,
   PaymentMethod,
   PaymentStatus,
+  PricingAdjustmentType,
 } from '@prisma/client';
 import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
@@ -81,4 +82,36 @@ export const GetUserActiveOrdersSchema = z.object({
 
 export class GetUserActiveOrdersDto extends createZodDto(
   GetUserActiveOrdersSchema,
+) {}
+
+export const UpdateOrderPricingAdjustmentsSchema = z.object({
+  pricingAdjustments: z.array(
+    z
+      .object({
+        id: z.number().int().optional(),
+        level: z.string().max(255),
+        type: z.enum(PricingAdjustmentType),
+        percentage: z.number().optional().nullable(),
+        fixedAmount: z.number().optional().nullable(),
+      })
+      .refine(
+        (data) => {
+          if (data.type === PricingAdjustmentType.PERCENTAGE) {
+            return data.percentage !== undefined && data.percentage !== null;
+          }
+          if (data.type === PricingAdjustmentType.FIXED_AMOUNT) {
+            return data.fixedAmount !== undefined && data.fixedAmount !== null;
+          }
+          return false;
+        },
+        {
+          message:
+            'percentage is required for PERCENTAGE type, and fixedAmount is required for FIXED_AMOUNT type',
+        },
+      ),
+  ),
+});
+
+export class UpdateOrderPricingAdjustmentsDto extends createZodDto(
+  UpdateOrderPricingAdjustmentsSchema,
 ) {}
