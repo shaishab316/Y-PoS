@@ -247,9 +247,10 @@ export class AnalyticsService {
     const { startDate, endDate } = this.getDateRange(query);
     const timezone = 'Asia/Bangkok';
 
-    const hoursData = await this.prisma.$queryRaw<
-      Array<{ hour: number | string | object; count: number }>
-    >`
+    const [hoursData, operatingHours] = await Promise.all([
+      this.prisma.$queryRaw<
+        Array<{ hour: number | string | object; count: number }>
+      >`
       SELECT 
         CAST(EXTRACT(HOUR FROM o."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone}) AS INTEGER) as hour,
         COUNT(DISTINCT o.id) as count
@@ -260,11 +261,55 @@ export class AnalyticsService {
         AND o."createdAt" <= ${endDate}
       GROUP BY 1
       ORDER BY hour ASC
-    `;
+    `,
+      this.prisma.operatingHours.findFirst(),
+    ]);
 
-    // Fill in missing hours with 0
+    const dayKeys = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ] as const;
+
+    // Build the set of hours that are "open" on at least one day in the range
+    const allowedHours = new Set<number>();
+
+    if (operatingHours) {
+      // Walk each calendar day between startDate and endDate, in APP timezone
+      const cursor = new Date(
+        new Date(startDate).toLocaleString('en-US', { timeZone: timezone }),
+      );
+      const end = new Date(
+        new Date(endDate).toLocaleString('en-US', { timeZone: timezone }),
+      );
+
+      while (cursor <= end) {
+        const dayKey = dayKeys[cursor.getDay()];
+        const startStr = operatingHours[`${dayKey}Start`];
+        const endStr = operatingHours[`${dayKey}End`];
+
+        if (startStr && endStr) {
+          const startHour = parseInt(startStr.split(':')[0], 10);
+          const endHour = parseInt(endStr.split(':')[0], 10);
+
+          for (let h = startHour; h <= endHour; h++) {
+            allowedHours.add(h);
+          }
+        }
+
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+
     const result: any[] = [];
     for (let h = 0; h < 24; h++) {
+      // If there's no operatingHours row at all, fall back to showing all hours
+      if (operatingHours && !allowedHours.has(h)) continue;
+
       const hourData = hoursData.find((d) => Number(d.hour) === h);
       result.push({
         hour: h,
