@@ -14,6 +14,22 @@ model PricingAdjustment {
   @@map("pricing_adjustments")
 }
 
+model AdditionalPricingAdjustment {
+  id Int @id @default(autoincrement())
+
+  level String? @default("Unknown Adjustment")
+
+  percentage  Decimal? @db.Decimal(10, 2)
+  fixedAmount Decimal? @db.Decimal(10, 2)
+
+  type PricingAdjustmentType @default(PERCENTAGE)
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@map("additional_pricing_adjustments")
+}
+
 enum PricingAdjustmentType {
   PERCENTAGE
   FIXED_AMOUNT

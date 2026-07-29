@@ -36,6 +36,7 @@ import { ShiftModule } from './modules/shift/shift.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './infra/mail/mail.module';
 import { PricingAdjustmentModule } from './modules/pricing-adjustment/pricing-adjustment.module';
+import { AdditionalPricingAdjustmentModule } from './modules/pricing-adjustment/additional-pricing-adjustment.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { PricingAdjustmentModule } from './modules/pricing-adjustment/pricing-ad
     ShiftModule,
     AuthModule,
     PricingAdjustmentModule,
+    AdditionalPricingAdjustmentModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
