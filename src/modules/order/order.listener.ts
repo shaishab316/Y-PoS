@@ -30,8 +30,10 @@ export class OrderListener {
     this.socketGateway.emit('*', 'orderPickedUp', payload);
   }
 
-  // @OnEvent('order.created')
-  // async createReceiptOnOrderCreated(orderId: number) {}
+  @OnEvent('order.created')
+  createReceiptOnOrderCreated(payload: any) {
+    this.socketGateway.emit('*', 'pendingPayment', payload);
+  }
 
   @OnEvent('order.paid')
   async handleOrderPaid(orderId: number) {

@@ -14,7 +14,7 @@ import {
   GetUserActiveOrdersDto,
   UpdateOrderPricingAdjustmentsDto,
 } from './order.dto';
-import { Prisma, PaymentStatus, OrderStatus, ItemType } from '@prisma/client';
+import { Prisma, PaymentStatus, OrderStatus } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -156,9 +156,7 @@ export class OrderService {
       },
     });
 
-    this.eventEmitter.emit('order.created', order.id);
-
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id: order.id },
       data: { slug: `o-${order.id.toString().padStart(5, '0')}` },
       include: {
@@ -177,6 +175,10 @@ export class OrderService {
         payment: true,
       },
     });
+
+    this.eventEmitter.emit('order.created', updated);
+
+    return updated;
   }
 
   async getAllOrders({
