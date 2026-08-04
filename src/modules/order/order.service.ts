@@ -711,9 +711,7 @@ export class OrderService {
       );
     }
 
-    this.eventEmitter.emit('order.sentToProduction', order);
-
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id },
       data: { status: OrderStatus.PENDING_PROCESSING },
       include: {
@@ -729,6 +727,10 @@ export class OrderService {
         },
       },
     });
+
+    this.eventEmitter.emit('order.sentToProduction', order);
+
+    return updated;
   }
 
   async acceptOrder(id: number) {

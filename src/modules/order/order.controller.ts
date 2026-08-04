@@ -24,11 +24,7 @@ import {
   GetUserActiveOrdersDto,
   UpdateOrderPricingAdjustmentsDto,
 } from './order.dto';
-import {
-  InvalidateCache,
-  CacheKey,
-  CacheTTL,
-} from '@/common/decorators/cache.decorator';
+import { InvalidateCache } from '@/common/decorators/cache.decorator';
 import type { ApiResponse } from '@/common/types/api-response';
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
 import { ParseJsonBodyInterceptor } from '@/common/interceptors/parse-json-body.interceptor';
@@ -93,8 +89,9 @@ export class OrderController {
   }
 
   @Get()
-  @CacheKey('order:all')
-  @CacheTTL(60)
+  //! Dont cache here
+  // @CacheKey('order:all')
+  // @CacheTTL(60)
   async getAllOrders(@Query() query: OrderQueryDto): Promise<ApiResponse> {
     const [data, total] = await this.orderService.getAllOrders(query);
 
@@ -111,8 +108,9 @@ export class OrderController {
   }
 
   @Get('active')
-  @CacheKey('order:active::query.userId')
-  @CacheTTL(60)
+  //! Dont cache here
+  // @CacheKey('order:active::query.userId')
+  // @CacheTTL(60)
   async gerUserActiveOrders(
     @Query() query: GetUserActiveOrdersDto,
   ): Promise<ApiResponse> {
@@ -131,8 +129,9 @@ export class OrderController {
   }
 
   @Get('production')
-  @CacheKey('order:all-production')
-  @CacheTTL(60)
+  //! Dont cache here
+  // @CacheKey('order:all-production')
+  // @CacheTTL(60)
   async getAllProductionOrders(
     @Query() query: OrderProductionQueryDto,
   ): Promise<ApiResponse> {
@@ -151,8 +150,9 @@ export class OrderController {
   }
 
   @Get('pending-payment')
-  @CacheKey('order:pending-payment')
-  @CacheTTL(30)
+  //! Dont cache here
+  // @CacheKey('order:pending-payment')
+  // @CacheTTL(30)
   async getPendingPaymentOrders(
     @Query() query: PaginationQueryDto,
   ): Promise<ApiResponse> {
@@ -174,8 +174,9 @@ export class OrderController {
   }
 
   @Get('paid-payment')
-  @CacheKey('order:paid-payment')
-  @CacheTTL(30)
+  //! Dont cache here
+  // @CacheKey('order:paid-payment')
+  // @CacheTTL(30)
   async getPaidPaymentOrders(
     @Query() query: PaginationQueryDto,
   ): Promise<ApiResponse> {
@@ -194,8 +195,8 @@ export class OrderController {
   }
 
   @Get(':id')
-  @CacheKey('order::params.id')
-  @CacheTTL(60)
+  // @CacheKey('order::params.id')
+  // @CacheTTL(60)
   async getOrderById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ApiResponse> {
