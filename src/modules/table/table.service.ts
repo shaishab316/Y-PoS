@@ -1,13 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { TableQueryDto } from './table.dto';
+import { CreateTableDto, TableQueryDto, UpdateTableDto } from './table.dto';
 
 @Injectable()
 export class TableService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createTable(data: Prisma.TableCreateArgs['data']) {
+  async createTable(dto: CreateTableDto) {
+    const data: Prisma.TableCreateArgs['data'] = {
+      ...dto,
+    };
+
+    if (!isNaN(Number(dto?.tableNumber))) {
+      data.id = Number(dto?.tableNumber);
+    }
+
     const table = await this.prisma.table.create({
       data,
     });
@@ -15,18 +23,27 @@ export class TableService {
     return this.prisma.table.update({
       where: { id: table.id },
       data: {
-        slug: `t-${table.id.toString().padStart(5, '0')}`,
+        slug: `t-${dto?.tableNumber?.padStart(5, '0')}`,
       },
     });
   }
 
-  async updateTable(id: number, data: Prisma.TableUpdateArgs['data']) {
+  async updateTable(id: number, dto: UpdateTableDto) {
     const table = await this.prisma.table.findUnique({
       where: { id },
     });
 
     if (!table) {
       throw new NotFoundException(`Table with id ${id} not found`);
+    }
+
+    const data: Prisma.TableUpdateArgs['data'] = {
+      ...dto,
+    };
+
+    if (!isNaN(Number(dto?.tableNumber))) {
+      data.id = Number(dto?.tableNumber);
+      data.slug = `t-${dto?.tableNumber?.padStart(5, '0')}`;
     }
 
     return this.prisma.table.update({
