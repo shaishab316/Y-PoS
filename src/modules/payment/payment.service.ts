@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infra/prisma/prisma.service';
-import { PaymentQueryDto } from './payment.dto';
-import { Prisma, PaymentVerificationStatus } from '@prisma/client';
+import {
+  PaymentQueryDto,
+  UpdatePaymentVerificationStatusDto,
+} from './payment.dto';
+import { Prisma } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
@@ -494,9 +497,10 @@ export class PaymentService {
 
   async updateVerificationStatus(
     paymentId: number,
-    status: PaymentVerificationStatus,
-    verifiedById: number,
+    dto: UpdatePaymentVerificationStatusDto,
   ) {
+    const { status, verifiedById, correctAmount, mismatchReason } = dto;
+
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
     });
@@ -516,6 +520,8 @@ export class PaymentService {
         verifiedAt: isVerified ? new Date() : null,
         verifiedById: isVerified ? verifiedById : null,
         markAsMissMatch: isMismatch,
+        correctAmount,
+        mismatchReason,
       },
       include: {
         order: {
@@ -674,14 +680,35 @@ Deposit: ${formatIDR(depositAmount)}
   }
 
   private formatWhatsAppDate(date: Date): string {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     const dayName = days[date.getDay()];
     const day = date.getDate();
     const monthName = months[date.getMonth()];
     const year = date.getFullYear();
-    
+
     return `${dayName}, ${day} ${monthName} ${year}`;
   }
 

@@ -25,6 +25,10 @@ model Payment {
 
   verificationStatus PaymentVerificationStatus @default(PENDING)
 
+  //? if PaymentVerificationStatus == MISMATCH
+  correctAmount  Decimal? @db.Decimal(10, 2)
+  mismatchReason String?
+
   verifiedAt DateTime?
 
   verifiedById Int?

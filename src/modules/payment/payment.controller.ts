@@ -173,11 +173,7 @@ export class PaymentController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdatePaymentVerificationStatusDto,
   ): Promise<ApiResponse> {
-    const data = await this.paymentService.updateVerificationStatus(
-      id,
-      body.status,
-      body.verifiedById,
-    );
+    const data = await this.paymentService.updateVerificationStatus(id, body);
 
     if (!data) {
       throw new NotFoundException('Payment not found');

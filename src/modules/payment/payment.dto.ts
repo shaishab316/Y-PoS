@@ -34,6 +34,8 @@ export const TodayPaymentVerifySchema = z.object({
 export const UpdatePaymentVerificationStatusSchema = z.object({
   status: z.enum(PaymentVerificationStatus),
   verifiedById: z.coerce.number().int().min(1),
+  correctAmount: z.coerce.number().optional(),
+  mismatchReason: z.string().max(5000).optional(),
 });
 
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
