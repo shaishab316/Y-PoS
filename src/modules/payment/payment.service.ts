@@ -422,23 +422,44 @@ export class PaymentService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get total amount of today's payments
-    const payments = await this.prisma.payment.aggregate({
-      where: {
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
+    const whereToday = {
+      createdAt: {
+        gte: today,
+        lt: tomorrow,
       },
-      _sum: {
-        totalAmount: true,
-      },
-    });
+    };
 
-    const totalAmount = Number(payments._sum.totalAmount) || 0;
+    // Get total amount of today's payments (all methods)
+    const totalPayments = await this.prisma.payment.aggregate({
+      where: whereToday,
+      _sum: { totalAmount: true },
+    });
+    const totalAmount = Number(totalPayments._sum.totalAmount) || 0;
+
+    // Get income cash (method = CASH, excluding TRANSFER)
+    const cashPayments = await this.prisma.payment.aggregate({
+      where: { ...whereToday, method: 'CASH' },
+      _sum: { totalAmount: true },
+    });
+    const incomeCash = Number(cashPayments._sum.totalAmount) || 0;
+
+    // Get income transfer (method = TRANSFER)
+    const transferPayments = await this.prisma.payment.aggregate({
+      where: { ...whereToday, method: 'TRANSFER' },
+      _sum: { totalAmount: true },
+    });
+    const incomeTransfer = Number(transferPayments._sum.totalAmount) || 0;
+
+    // Get opening cash = previous day's closing cash from the last PaymentVerify
+    const lastVerification = await this.prisma.paymentVerify.findFirst({
+      orderBy: { date: 'desc' },
+      select: { closingCash: true },
+    });
+    const openingCash = lastVerification?.closingCash
+      ? Number(lastVerification.closingCash)
+      : 0;
 
     // Get count of already submitted payment verifications for today
-    // Using raw query to properly handle date comparison
     const alreadyVerifiedCount = await this.prisma.paymentVerify.count({
       where: {
         verifiedAt: {
@@ -450,6 +471,9 @@ export class PaymentService {
 
     return {
       totalAmount,
+      incomeCash,
+      incomeTransfer,
+      openingCash,
       alreadyVerified: alreadyVerifiedCount,
     };
   }
