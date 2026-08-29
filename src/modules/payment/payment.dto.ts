@@ -17,6 +17,8 @@ export const PaymentQuerySchema = z.object({
   status: z.enum(PaymentStatus).optional(),
   method: z.enum(PaymentMethod).optional(),
   search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 export const VerifyPaymentSchema = z.object({
@@ -59,6 +61,11 @@ export const UpdatePaymentVerificationStatusSchema = z.object({
   mismatchReason: z.string().max(5000).optional(),
 });
 
+export const DateRangeQuerySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
 export class PaginationQueryDto extends createZodDto(PaginationQuerySchema) {}
 export class PaymentQueryDto extends createZodDto(PaymentQuerySchema) {}
 export class VerifyPaymentDto extends createZodDto(VerifyPaymentSchema) {}
@@ -68,3 +75,4 @@ export class TodayPaymentVerifyDto extends createZodDto(
 export class UpdatePaymentVerificationStatusDto extends createZodDto(
   UpdatePaymentVerificationStatusSchema,
 ) {}
+export class DateRangeQueryDto extends createZodDto(DateRangeQuerySchema) {}

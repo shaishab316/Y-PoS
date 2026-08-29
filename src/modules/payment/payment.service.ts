@@ -3,6 +3,7 @@ import { PrismaService } from '@/infra/prisma/prisma.service';
 import {
   PaymentQueryDto,
   UpdatePaymentVerificationStatusDto,
+  DateRangeQueryDto,
 } from './payment.dto';
 import { Prisma } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
@@ -12,16 +13,32 @@ export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllPayments(query: PaymentQueryDto) {
-    const { page, limit, search } = query;
+    const { page, limit, search, startDate, endDate } = query;
     const skip = (page - 1) * limit;
+
+    // Build date filter: inclusive on both ends
+    const createdAtFilter: { gte?: Date; lte?: Date } = {};
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      createdAtFilter.gte = start;
+    } else {
+      // Default: start of today
+      createdAtFilter.gte = new Date(new Date().setHours(0, 0, 0, 0));
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      createdAtFilter.lte = end;
+    } else {
+      // Default: end of today
+      createdAtFilter.lte = new Date(new Date().setHours(23, 59, 59, 999));
+    }
 
     const where: Prisma.PaymentWhereInput = {
       status: 'PAID',
       verificationStatus: 'PENDING',
-      createdAt: {
-        gte: new Date(new Date().setHours(0, 0, 0, 0)), // Start of today
-        lt: new Date(new Date().setHours(24, 0, 0, 0)), // Start of tomorrow
-      },
+      createdAt: createdAtFilter,
     };
     // if (status) {
     //   where.status = status;
@@ -415,37 +432,44 @@ export class PaymentService {
     return buffer;
   }
 
-  async getTodayPaymentsSummary() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  async getTodayPaymentsSummary(query?: DateRangeQueryDto) {
+    // Build date filter: inclusive on both ends, defaults to today
+    const createdAtFilter: { gte: Date; lte: Date } = {
+      gte: new Date(new Date().setHours(0, 0, 0, 0)),
+      lte: new Date(new Date().setHours(23, 59, 59, 999)),
+    };
+    if (query?.startDate) {
+      const start = new Date(query.startDate);
+      start.setHours(0, 0, 0, 0);
+      createdAtFilter.gte = start;
+    }
+    if (query?.endDate) {
+      const end = new Date(query.endDate);
+      end.setHours(23, 59, 59, 999);
+      createdAtFilter.lte = end;
+    }
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const whereToday = {
-      createdAt: {
-        gte: today,
-        lt: tomorrow,
-      },
+    const whereDate = {
+      createdAt: createdAtFilter,
     };
 
-    // Get total amount of today's payments (all methods)
+    // Get total amount of payments in range (all methods)
     const totalPayments = await this.prisma.payment.aggregate({
-      where: whereToday,
+      where: whereDate,
       _sum: { totalAmount: true },
     });
     const totalAmount = Number(totalPayments._sum.totalAmount) || 0;
 
     // Get income cash (method = CASH, excluding TRANSFER)
     const cashPayments = await this.prisma.payment.aggregate({
-      where: { ...whereToday, method: 'CASH' },
+      where: { ...whereDate, method: 'CASH' },
       _sum: { totalAmount: true },
     });
     const incomeCash = Number(cashPayments._sum.totalAmount) || 0;
 
     // Get income transfer (method = TRANSFER)
     const transferPayments = await this.prisma.payment.aggregate({
-      where: { ...whereToday, method: 'TRANSFER' },
+      where: { ...whereDate, method: 'TRANSFER' },
       _sum: { totalAmount: true },
     });
     const incomeTransfer = Number(transferPayments._sum.totalAmount) || 0;
@@ -459,13 +483,10 @@ export class PaymentService {
       ? Number(lastVerification.closingCash)
       : 0;
 
-    // Get count of already submitted payment verifications for today
+    // Get count of already submitted payment verifications in range
     const alreadyVerifiedCount = await this.prisma.paymentVerify.count({
       where: {
-        verifiedAt: {
-          gte: today,
-          lt: tomorrow,
-        },
+        verifiedAt: createdAtFilter,
       },
     });
 

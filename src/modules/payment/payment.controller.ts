@@ -20,6 +20,7 @@ import {
   VerifyPaymentDto,
   TodayPaymentVerifyDto,
   UpdatePaymentVerificationStatusDto,
+  DateRangeQueryDto,
 } from './payment.dto';
 import type { ApiResponse } from '@/common/types/api-response';
 import { createFileUploadInterceptor } from '@/infra/upload/interceptors/file-upload.interceptor';
@@ -219,8 +220,10 @@ export class PaymentController {
   }
 
   @Get('today/summary')
-  async getTodayPayments(): Promise<ApiResponse> {
-    const data = await this.paymentService.getTodayPaymentsSummary();
+  async getTodayPayments(
+    @Query() query: DateRangeQueryDto,
+  ): Promise<ApiResponse> {
+    const data = await this.paymentService.getTodayPaymentsSummary(query);
 
     return {
       success: true,
