@@ -454,21 +454,49 @@ export class PaymentService {
     };
   }
 
-  async createTodayPaymentVerify(
-    totalAmount: number,
-    actualAmount: number,
-    remark: string | null,
-    proofImages: string[],
-    verifiedById: number,
-  ) {
+  async createTodayPaymentVerify(dto: {
+    totalSales: number | null;
+    actualSales: number | null;
+    remark?: string | null;
+    proofImages?: string[];
+    verifiedById: number;
+    openingCash?: number | null;
+    cashIn?: number | null;
+    totalOpeningCash?: number | null;
+    incomeCash?: number | null;
+    actualIncomeCash?: number | null;
+    incomeTransfer?: number | null;
+    actualTransfer?: number | null;
+    expensesCash?: number | null;
+    expenseRemark?: string | null;
+    cashDeposit?: string[];
+    closingCash?: number | null;
+  }) {
     const paymentVerify = await this.prisma.paymentVerify.create({
       data: {
         date: new Date(),
-        totalAmount,
-        actualAmount,
-        remark,
-        proofImages,
-        verifiedById,
+        totalAmount: dto.totalSales,
+        actualAmount: dto.actualSales,
+        remark: dto.remark ?? null,
+        proofImages: dto.proofImages ?? [],
+        verifiedById: dto.verifiedById,
+        // Opening
+        openingCash: dto.openingCash ?? null,
+        cashIn: dto.cashIn ?? null,
+        totalOpeningCash: dto.totalOpeningCash ?? null,
+        // Sales
+        incomeCash: dto.incomeCash ?? null,
+        actualIncomeCash: dto.actualIncomeCash ?? null,
+        incomeTransfer: dto.incomeTransfer ?? null,
+        actualTransfer: dto.actualTransfer ?? null,
+        totalSales: dto.totalSales ?? null,
+        actualSales: dto.actualSales ?? null,
+        // CashOut
+        expensesCash: dto.expensesCash ?? null,
+        expenseRemark: dto.expenseRemark ?? null,
+        cashDeposit: dto.cashDeposit ?? [],
+        // Closing
+        closingCash: dto.closingCash ?? null,
       },
       include: {
         verifiedBy: {

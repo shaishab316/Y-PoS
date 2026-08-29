@@ -35,6 +35,12 @@ const ProofImagesUploadInterceptor = createFileUploadInterceptor({
       maxFileSize: 15 * 1024 * 1024, // 15 MB
       allowedMimeTypes: ['*'],
     },
+    {
+      name: 'cashDeposit',
+      maxCount: 5,
+      maxFileSize: 15 * 1024 * 1024, // 15 MB
+      allowedMimeTypes: ['*'],
+    },
   ],
 });
 
@@ -100,9 +106,14 @@ export class PaymentController {
   @UseInterceptors(ProofImagesUploadInterceptor, ParseJsonBodyInterceptor)
   async todayPaymentVerify(
     @Body() body: TodayPaymentVerifyDto,
-    @UploadedFiles() files: { proofImages?: Express.Multer.File[] },
+    @UploadedFiles()
+    files: {
+      proofImages?: Express.Multer.File[];
+      cashDeposit?: Express.Multer.File[];
+    },
   ): Promise<ApiResponse> {
     let proofImageUrls: string[] = [];
+    let cashDepositUrls: string[] = [];
 
     if (files?.proofImages?.length) {
       const uploaded = await this.cloudinary.uploadFiles(
@@ -113,23 +124,44 @@ export class PaymentController {
       proofImageUrls = uploaded.map((u) => u.url);
     }
 
+    if (files?.cashDeposit?.length) {
+      const uploaded = await this.cloudinary.uploadFiles(
+        files.cashDeposit,
+        'payment-verify',
+        'image',
+      );
+      cashDepositUrls = uploaded.map((u) => u.url);
+    }
+
     console.log('Proof image URLs:', proofImageUrls);
+    console.log('CashDeposit image URLs:', cashDepositUrls);
     console.log('Request body:', body);
 
-    const data = await this.paymentService.createTodayPaymentVerify(
-      body.totalAmount,
-      body.actualAmount,
-      body.remark || null,
-      proofImageUrls,
-      body.verifiedById,
-    );
+    const data = await this.paymentService.createTodayPaymentVerify({
+      totalSales: body.totalSales ?? null,
+      actualSales: body.actualSales ?? null,
+      remark: body.remark ?? null,
+      proofImages: proofImageUrls,
+      verifiedById: body.verifiedById,
+      openingCash: body.openingCash ?? null,
+      cashIn: body.cashIn ?? null,
+      totalOpeningCash: body.totalOpeningCash ?? null,
+      incomeCash: body.incomeCash ?? null,
+      actualIncomeCash: body.actualIncomeCash ?? null,
+      incomeTransfer: body.incomeTransfer ?? null,
+      actualTransfer: body.actualTransfer ?? null,
+      expensesCash: body.expensesCash ?? null,
+      expenseRemark: body.expenseRemark ?? null,
+      cashDeposit: body.cashDeposit ?? [],
+      closingCash: body.closingCash ?? null,
+    });
 
     this.eventEmitter.emit('todayPaymentVerify', data);
 
     const whatsappUrl = await this.paymentService.getWhatsAppUrlForVerification(
       body.verifiedById,
-      body.totalAmount,
-      body.actualAmount,
+      body.totalSales ?? 0,
+      body.actualSales ?? 0,
       body.remark || null,
       proofImageUrls,
     );

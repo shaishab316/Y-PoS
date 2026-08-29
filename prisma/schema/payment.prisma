@@ -61,12 +61,33 @@ model PaymentVerify {
 
   remark String?
 
-  proofImages String[]
-
   verifiedAt DateTime? @default(now())
 
   verifiedById Int?
   verifiedBy   User? @relation("PaymentVerifyVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
 
+  // opening
+  openingCash      Decimal? @db.Decimal(10, 2)
+  cashIn           Decimal? @db.Decimal(10, 2)
+  totalOpeningCash Decimal? @db.Decimal(10, 2)
+
+  // Sales
+  incomeCash       Decimal? @db.Decimal(10, 2)
+  actualIncomeCash Decimal? @db.Decimal(10, 2)
+  incomeTransfer   Decimal? @db.Decimal(10, 2)
+  actualTransfer   Decimal? @db.Decimal(10, 2)
+  totalSales       Decimal? @db.Decimal(10, 2)
+  actualSales      Decimal? @db.Decimal(10, 2)
+
+  // CashOut
+  expensesCash  Decimal? @db.Decimal(10, 2)
+  expenseRemark String?
+  cashDeposit   String[]
+
+  // Closing
+  closingCash Decimal? @db.Decimal(10, 2)
+  proofImages String[]
+
+  @@index([date])
   @@map("payment_verifies")
 }
