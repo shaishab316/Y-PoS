@@ -31,22 +31,21 @@ export class PaymentService {
     // }
 
     if (search) {
-      where.OR = [
-        {
-          order: {
-            id: isNaN(Number(search)) ? undefined : Number(search),
+      where.order = {
+        OR: [
+          {
+            slug: {
+              contains: search,
+              mode: 'insensitive',
+            },
           },
-        },
-        {
-          order: {
+          {
             customerName: {
               contains: search,
               mode: 'insensitive',
             },
           },
-        },
-        {
-          order: {
+          {
             orderItems: {
               some: {
                 itemName: {
@@ -56,8 +55,8 @@ export class PaymentService {
               },
             },
           },
-        },
-      ];
+        ],
+      };
     }
 
     return await Promise.all([
