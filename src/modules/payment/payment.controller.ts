@@ -160,11 +160,9 @@ export class PaymentController {
     this.eventEmitter.emit('todayPaymentVerify', data);
 
     const whatsappUrl = await this.paymentService.getWhatsAppUrlForVerification(
-      body.verifiedById,
-      body.totalSales ?? 0,
-      body.actualSales ?? 0,
-      body.remark || null,
+      body,
       proofImageUrls,
+      cashDepositUrls,
     );
 
     return {

@@ -83,6 +83,7 @@ model PaymentVerify {
   expensesCash  Decimal? @db.Decimal(10, 2)
   expenseRemark String?
   cashDeposit   String[]
+  deposit       Decimal? @db.Decimal(10, 2)
 
   // Closing
   closingCash Decimal? @db.Decimal(10, 2)

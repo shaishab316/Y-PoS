@@ -515,6 +515,7 @@ export class PaymentService {
     expensesCash?: number | null;
     expenseRemark?: string | null;
     cashDeposit?: string[];
+    deposit?: number | null;
     closingCash?: number | null;
   }) {
     const paymentVerify = await this.prisma.paymentVerify.create({
@@ -540,6 +541,7 @@ export class PaymentService {
         expensesCash: dto.expensesCash ?? null,
         expenseRemark: dto.expenseRemark ?? null,
         cashDeposit: dto.cashDeposit ?? [],
+        deposit: dto.deposit ?? null,
         // Closing
         closingCash: dto.closingCash ?? null,
       },
@@ -659,11 +661,20 @@ export class PaymentService {
   }
 
   async getWhatsAppUrlForVerification(
-    verifiedById: number,
-    totalAmount: number,
-    actualAmount: number,
-    remark: string | null,
+    body: {
+      totalSales?: number | null;
+      actualSales?: number | null;
+      remark?: string | null;
+      openingCash?: number | null;
+      cashIn?: number | null;
+      actualIncomeCash?: number | null;
+      actualTransfer?: number | null;
+      expensesCash?: number | null;
+      deposit?: number | null;
+      closingCash?: number | null;
+    },
     proofImages: string[] = [],
+    cashDepositImages: string[] = [],
   ) {
     // 1. Fetch business name from BusinessProfile
     const business = await this.prisma.businessProfile.findFirst();
@@ -688,30 +699,12 @@ export class PaymentService {
     const dateStr = this.formatWhatsAppDate(new Date());
 
     // 4. Determine status
+    const totalAmount = body.totalSales ?? 0;
+    const actualAmount = body.actualSales ?? 0;
     const isMismatch = actualAmount !== totalAmount;
-    const statusText = isMismatch ? '❌ MISMATCH' : '✅ MATCH';
+    const statusText = isMismatch ? '❎ MISMATCH' : '✅ MATCH';
 
-    // 5. Parse Cash in Store and calculate Deposit
-    const cashInStore = this.parseCashInStore(remark);
-    const depositAmount = actualAmount - cashInStore;
-
-    // 6. Clean remark and split cash in store
-    let cleanRemark = remark || '';
-    let cashInStoreLine = '';
-
-    const cashInStoreIndex = cleanRemark.toLowerCase().indexOf('cash in store');
-    if (cashInStoreIndex !== -1) {
-      cashInStoreLine = cleanRemark.substring(cashInStoreIndex).trim();
-      cleanRemark = cleanRemark.substring(0, cashInStoreIndex).trim();
-      cleanRemark = cleanRemark.replace(/[,.\s]+$/, '');
-    }
-
-    if (cleanRemark === '') {
-      cleanRemark = remark || '';
-      cashInStoreLine = '';
-    }
-
-    // 7. Format IDR helper
+    // 5. Format IDR helper
     const formatIDR = (val: number) => {
       const formatted = Math.round(val)
         .toString()
@@ -719,7 +712,7 @@ export class PaymentService {
       return `Rp ${formatted}`;
     };
 
-    // 8. Build message
+    // 6. Build message
     let textMessage = `Closing Sales Report
 ${businessName}
 ${dateStr}
@@ -727,25 +720,57 @@ ${dateStr}
 Sales: ${formatIDR(totalAmount)}
 Funds Received: ${formatIDR(actualAmount)}
 
-${statusText}
-_________
-
-Deposit: ${formatIDR(depositAmount)}
 `;
 
-    if (cleanRemark) {
-      textMessage += `\nRemarks: ${cleanRemark}`;
+    if (isMismatch) {
+      const diff = actualAmount - totalAmount;
+      const sign = diff > 0 ? '+' : '-';
+      textMessage += `${statusText}\nMismatch amount: ${sign} ${formatIDR(Math.abs(diff))}\n`;
+    } else {
+      textMessage += `${statusText}\n`;
     }
 
-    if (cashInStoreLine) {
-      textMessage += `\n\n${cashInStoreLine}`;
+    if (body.remark) {
+      textMessage += `Remarks: ${body.remark}\n`;
     }
+
+    textMessage += `_________\n`;
+
+    const detailLines: string[] = [];
+    if (body.openingCash != null) {
+      detailLines.push(`Opening Cash: ${formatIDR(body.openingCash)}`);
+    }
+    if (body.cashIn != null) {
+      detailLines.push(`Cash in: ${formatIDR(body.cashIn)}`);
+    }
+    if (body.actualIncomeCash != null) {
+      detailLines.push(`Cash Sales: ${formatIDR(body.actualIncomeCash)}`);
+    }
+    if (body.actualTransfer != null) {
+      detailLines.push(`Transfer Sales: ${formatIDR(body.actualTransfer)}`);
+    }
+    if (body.expensesCash != null) {
+      detailLines.push(`Expense: ${formatIDR(body.expensesCash)}`);
+    }
+    if (body.deposit != null) {
+      detailLines.push(`Deposit: ${formatIDR(body.deposit)}`);
+    }
+
+    textMessage += '\n' + detailLines.join('\n') + '\n';
 
     if (proofImages && proofImages.length > 0) {
-      textMessage += `\n\nProof Images:\n` + proofImages.join('\n');
+      textMessage += `Proof Images:\n` + proofImages.join('\n') + '\n';
     }
 
-    // 9. Generate url encoded text
+    if (body.closingCash != null) {
+      textMessage += `Balance cash: ${formatIDR(body.closingCash)}\n`;
+    }
+
+    if (cashDepositImages && cashDepositImages.length > 0) {
+      textMessage += `Proof Images:\n` + cashDepositImages.join('\n') + '\n';
+    }
+
+    // 7. Generate url encoded text
     const encodedText = encodeURIComponent(textMessage);
 
     return `https://wa.me/${cleanPhone}?text=${encodedText}`;
@@ -782,17 +807,5 @@ Deposit: ${formatIDR(depositAmount)}
     const year = date.getFullYear();
 
     return `${dayName}, ${day} ${monthName} ${year}`;
-  }
-
-  private parseCashInStore(remark: string | null | undefined): number {
-    if (!remark) return 0;
-    const regex = /cash\s+in\s+store\s*(?:rp\.?|:)?\s*([\d.]+)/i;
-    const match = remark.match(regex);
-    if (match) {
-      const numStr = match[1].replace(/\./g, '');
-      const num = parseFloat(numStr);
-      return isNaN(num) ? 0 : num;
-    }
-    return 0;
   }
 }

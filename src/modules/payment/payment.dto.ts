@@ -44,6 +44,7 @@ export const TodayPaymentVerifySchema = z.object({
   expensesCash: z.coerce.number().min(0).nullable().optional(),
   expenseRemark: z.string().nullable().optional(),
   cashDeposit: z.array(z.string()).default([]),
+  deposit: z.coerce.number().min(0).nullable().optional(),
 
   // Closing
   closingCash: z.coerce.number().min(0).nullable().optional(),
