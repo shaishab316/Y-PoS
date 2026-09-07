@@ -155,6 +155,7 @@ export class PaymentController {
       expenseRemark: body.expenseRemark ?? null,
       cashDeposit: body.cashDeposit ?? [],
       closingCash: body.closingCash ?? null,
+      deposit: body.deposit ?? null,
     });
 
     this.eventEmitter.emit('todayPaymentVerify', data);
