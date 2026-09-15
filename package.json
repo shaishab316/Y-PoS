@@ -1,7 +1,7 @@
 {
-  "name": "graceperman",
+  "name": "YPoS",
   "version": "0.0.1",
-  "description": "Smart pos api for restaurant ordering system",
+  "description": "A restaurant POS system for managing orders, inventory, menu items, and daily operations.",
   "author": "https://github.com/shaishab316",
   "keywords": [
     "nestjs",

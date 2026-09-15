@@ -58,7 +58,7 @@ import { AdditionalPricingAdjustmentModule } from './modules/pricing-adjustment/
           }),
           new LokiTransport({
             host: config.get('LOKI_URL', { infer: true }),
-            labels: { job: 'nestjs', app: 'graceperman' },
+            labels: { job: 'nestjs', app: 'YPoS' },
           }),
         ],
       }),

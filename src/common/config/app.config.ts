@@ -108,7 +108,7 @@ const envSchema = z.object({
     .describe('Email sender address'),
   SMTP_FROM_NAME: z
     .string()
-    .default('graceperman')
+    .default('YPoS')
     .describe('Email sender name'),
 
   // Admin
