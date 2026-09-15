@@ -90,6 +90,10 @@ Some integrations require additional configuration. Check the relevant source co
 
 ## Architecture
 
+<img width="2752" height="1536" alt="shaishab316-YPoS-lld" src="https://github.com/user-attachments/assets/37fa241c-736e-43fc-a862-d1ab84f7beae" />
+
+---
+
 Y-PoS follows a modular, domain-oriented architecture.
 
 Each business domain has its own NestJS module, keeping related controllers, DTOs, and services together. Shared infrastructure and cross-cutting concerns are handled separately.
@@ -453,76 +457,6 @@ pnpm test:e2e
 - Add regression tests when fixing bugs.
 - Test database-dependent behavior with an appropriate test database.
 - Avoid relying on production services or credentials during tests.
-
-## Production Deployment
-
-The repository includes Docker configuration for development and production environments.
-
-```text
-Dockerfile
-docker-compose.yml
-docker-compose.prod.yml
-```
-
-Build the application:
-
-```bash
-pnpm build
-```
-
-Start the compiled application:
-
-```bash
-pnpm start:prod
-```
-
-For containerized deployment, review the production Compose configuration and configure the required environment variables, database, Redis, networking, and persistent storage.
-
-### Production checklist
-
-Before deploying, verify the following:
-
-- [ ] Production environment variables and secrets are configured.
-- [ ] A production PostgreSQL database is available.
-- [ ] Redis and background-job infrastructure are configured.
-- [ ] Database migrations are applied using the deployment procedure.
-- [ ] The reverse proxy and HTTPS are configured.
-- [ ] Health checks and application logs are working.
-- [ ] Database backups and recovery procedures are in place.
-- [ ] Authentication, rate limiting, and access controls are verified.
-
-## Documentation
-
-The `docs/` directory contains additional technical documentation for understanding the codebase and its infrastructure.
-
-| Document                                | Description                      |
-| --------------------------------------- | -------------------------------- |
-| `docs/architecture.md`                  | Application architecture         |
-| `docs/ai-memory.md`                     | Project-specific AI context      |
-| `docs/codebase/file-and-folder.md`      | Codebase organization            |
-| `docs/database/schema.md`               | Database schema documentation    |
-| `docs/file-uploading/cloudinary.md`     | Cloudinary upload implementation |
-| `docs/response-cache/response-cache.md` | Response caching implementation  |
-
-### Run the documentation locally
-
-Start the documentation development server:
-
-```bash
-pnpm docs:dev
-```
-
-Build the documentation:
-
-```bash
-pnpm docs:build
-```
-
-Preview the documentation build:
-
-```bash
-pnpm docs:preview
-```
 
 ---
 
