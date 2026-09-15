@@ -9,7 +9,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 RUN corepack enable \
-  && corepack prepare pnpm@latest --activate
+  && corepack prepare pnpm@10.20.0 --activate
 
 
 # ---------- Development ----------
@@ -37,7 +37,8 @@ ENV NODE_ENV=production
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile --prod=false
+
 
 COPY . .
 
