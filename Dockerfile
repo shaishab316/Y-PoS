@@ -66,7 +66,6 @@ ENV NODE_ENV=production
 
 # Application
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/templates ./templates
 
 # Production dependencies
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
@@ -79,7 +78,6 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
 # Generated Prisma client
-COPY --from=builder --chown=nestjs:nodejs /app/generated ./generated
 
 USER nestjs
 
