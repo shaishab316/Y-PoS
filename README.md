@@ -1,5 +1,9 @@
 # Y-PoS
 
+<img width="2752" height="1404" alt="shaishab316-YPoS-banner" src="https://github.com/user-attachments/assets/81b98844-1c51-4ea9-ba6a-839ee77242b3" />
+
+---
+
 A restaurant Point of Sale (POS) backend built with NestJS, TypeScript, PostgreSQL, and Prisma.
 
 Y-PoS provides the API layer for restaurant operations, from managing menu items and orders to processing payments, tracking inventory, and generating reports.
